@@ -25,7 +25,7 @@ use strict;
 		close(OUT);
 		close(INF);
 		
-		system("sort -k2,3n \Q$file\E.temp > \Q$file\E.sorted.temp");
+		system("sort -k2,3n \Q$file\E.temp > \Q$file\E.sorted.temp"); #sorts so that duplicate introns will be next to each other
 		
 		open(INF2, "<$file.sorted.temp" ) or die "couldn't reopen file";
 		open(OUT2, ">$file.bed");
@@ -39,7 +39,7 @@ use strict;
 		while (my $line = <INF2>) {
 			chomp($line);
 			my @cols = split("\t", $line);
-			if ($cols[0] eq $previous_chr && $cols[1] == $previous_donor && $cols[2] == $previous_acceptor && $cols[5] eq $previous_strand) {
+			if ($cols[0] eq $previous_chr && $cols[1] == $previous_donor && $cols[2] == $previous_acceptor && $cols[5] eq $previous_strand) { #checks to see if the intron matches the previous intron
 				$count = $count + $cols[4];
 				$previous_chr = $cols[0];
 				$previous_donor = $cols[1];
@@ -47,7 +47,7 @@ use strict;
 				$previous_strand = $cols[5];
 			}
 			else {
-				if ($previous_chr eq "start") { #trying to prevent the placeholder from printing out as a first line. Right now causes output to be entirely blank
+				if ($previous_chr eq "start") { #prevents the initial placeholder value from printing out as a line, and sets the values of the first intron
 					$previous_chr = $cols[0];
 					$previous_donor = $cols[1];
 					$previous_acceptor = $cols[2];
@@ -55,7 +55,7 @@ use strict;
 					$count = $cols[4];
 				}
 				else {				
-					print OUT2 "$previous_chr\t$previous_donor\t$previous_acceptor\t$count\t$count\t$previous_strand\n";
+					print OUT2 "$previous_chr\t$previous_donor\t$previous_acceptor\t$count\t$count\t$previous_strand\n"; #prints out in bed format
 					$count = $cols[4];
 					$previous_chr = $cols[0];
 					$previous_donor = $cols[1];
@@ -65,9 +65,11 @@ use strict;
 			}
 		}
 		
+		print OUT2 "$previous_chr\t$previous_donor\t$previous_acceptor\t$count\t$count\t$previous_strand\n"; #adds the last feature
+				
 		close(OUT2);
 		close(INF2);
 		
-	#system("rm \Q$file\E.temp");
-	#system("rm \Q$file\E.sorted.temp");
+	system("rm \Q$file\E.temp");
+	system("rm \Q$file\E.sorted.temp");
 	}
