@@ -22,8 +22,43 @@ foreach my $file(@ARGV) {
 	close(INF);
 }
 
-open(OUT, ">combined.files.txt");
+open(OUT, ">combined_files.txt");
 
 print OUT @combined;
 
 close(OUT);
+
+system("sort -k 2,3n combined_files.txt > combined.files.txt.sorted.tmp");
+
+open(INF2, "<combined_files.txt") or die "couldn't open file";
+open(OUT2, ">combined_files.temp");
+
+my %junctions;
+
+while (my $line = <INF2>) {
+	chomp($line);
+		
+	my @cols = split("\t", $line);
+		
+	my $chr_start_end_strand = "$cols[0]\:$cols[1]\:$cols[2]\:$cols[3]";
+		
+	if (exists $junctions{$chr_start_end_strand}) { #if the key is already in the hash, increases the value (count) by the read depth for that junction
+		$junctions{$chr_start_end_strand} = $junctions{$chr_start_end_strand} + $cols[6];	
+	}
+					
+	else {
+		$junctions{$chr_start_end_strand} = $cols[6]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative junction
+				
+	}
+		
+}
+
+foreach my $chr_start_end_strand (sort keys %junctions) { #prints out a(n inadequately) sorted wiggle file
+		my @split_keys = split("\:", $chr_start_end_strand); 
+		print OUT2 "$split_keys[0]\t$split_keys[1]\t$split_keys[2]\t\.\t$junctions{$chr_start_end_strand}\t$split_keys[3]\n";
+	}		
+
+close(INF2);
+close(OUT2);
+
+system("sort -k1,1 -k2,3n combined_files.temp > combined_files.bed");
