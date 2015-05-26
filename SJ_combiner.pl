@@ -12,7 +12,7 @@ use strict;
 
 my @combined;
 
-foreach my $file(@ARGV) {
+foreach my $file(@ARGV) { #concatenates all the files to make one big file
 	open(INF, "<$file") or die "couldn't open file";
 	
 	while (my $line = <INF>) {
@@ -31,38 +31,38 @@ close(OUT);
 open(INF2, "<combined_files.txt") or die "couldn't open file";
 open(OUT2, ">combined_files.temp");
 
-my %junctions;
+my %junctions; #creates a hash that will be used to store junctions and their read depths
 
 while (my $line = <INF2>) {
 	chomp($line);
 		
 	my @cols = split("\t", $line);
 	
-	next if $cols[3] == 0;
+	next if $cols[3] == 0; #skips the junction if its strand is undefined
 	
-	if ($cols[3] == 1) {
+	if ($cols[3] == 1) { #if the junction is on the plus strand:
 		
-		my $chr_start_end_strand = "$cols[0]\:$cols[1]\:$cols[2]\:\+";
+		my $chr_start_end_strand = "$cols[0]\:$cols[1]\:$cols[2]\:\+"; #creates a hash key using the chromosome, coordinates and strand
 		
 		if (exists $junctions{$chr_start_end_strand}) { #if the key is already in the hash, increases the value (count) by the read depth for that junction
 			$junctions{$chr_start_end_strand} = $junctions{$chr_start_end_strand} + $cols[6];	
 		}
 					
 		else {
-			$junctions{$chr_start_end_strand} = $cols[6]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative junction
+			$junctions{$chr_start_end_strand} = $cols[6]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that junction
 				
 		}
 	}
-		if ($cols[3] == 2) {
+		if ($cols[3] == 2) { #if the junction is on the minus strand:
 		
-		my $chr_start_end_strand = "$cols[0]\:$cols[1]\:$cols[2]\:\-";
+		my $chr_start_end_strand = "$cols[0]\:$cols[1]\:$cols[2]\:\-"; #creates a hash key using the chromosome, coordinates and strand
 		
 		if (exists $junctions{$chr_start_end_strand}) { #if the key is already in the hash, increases the value (count) by the read depth for that junction
 			$junctions{$chr_start_end_strand} = $junctions{$chr_start_end_strand} + $cols[6];	
 		}
 					
 		else {
-			$junctions{$chr_start_end_strand} = $cols[6]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative junction
+			$junctions{$chr_start_end_strand} = $cols[6]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that junction
 				
 		}
 	}
