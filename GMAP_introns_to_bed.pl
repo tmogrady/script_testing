@@ -16,16 +16,16 @@ use strict;
 			my ($score) = $line =~ /\>.+\/(\d+)\//;
 			my ($donor, $acceptor) = $line =~ /:(\d+)\.\.(\d+)/;
 			if ($acceptor > $donor) {
-				print OUT $chr, "\t", $donor, "\t", $acceptor - 1, "\t", $id, "\t", $score, "\t+\t", $donor, "\t", $acceptor - 1, "\t255,0,0\n";
+				print OUT $chr, "\t", $donor, "\t", $acceptor - 1, "\t", $id, "\t", $score, "\t+\n";
 			}
 			else {
-				print OUT $chr, "\t", $acceptor, "\t", $donor - 1, "\t", $id, "\t", $score, "\t-\t", $acceptor, "\t", $donor-1, "\t255,0,0\n";
+				print OUT $chr, "\t", $acceptor, "\t", $donor - 1, "\t", $id, "\t", $score, "\t-\n";
 			}
 		}
 		close(OUT);
 		close(INF);
 		
-		system("sort -k7,8n \Q$file\E.temp > \Q$file\E.sorted.temp");
+		system("sort -k2,3n \Q$file\E.temp > \Q$file\E.sorted.temp");
 		
 		open(INF2, "<$file.sorted.temp" ) or die "couldn't reopen file";
 		open(OUT2, ">$file.bed");
@@ -55,7 +55,7 @@ use strict;
 					$count = $cols[4];
 				}
 				else {				
-					print OUT2 "$previous_chr\t$previous_donor\t$previous_acceptor\t$count\t$count\t$previous_strand\t$previous_donor\t$previous_acceptor\t255,0,0\n";
+					print OUT2 "$previous_chr\t$previous_donor\t$previous_acceptor\t$count\t$count\t$previous_strand\n";
 					$count = $cols[4];
 					$previous_chr = $cols[0];
 					$previous_donor = $cols[1];
