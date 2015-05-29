@@ -7,7 +7,7 @@
 use warnings;
 use strict;
 
-die "Wrong number of arguments. Usage: perl <path to perl script>  <window_for_collapsing> <path_to_wiggle_file>\n" unless @ARGV == 2;
+die "Wrong number of arguments. Usage: perl <path to perl script>  <min_distance_between_wig_features> <path_to_wiggle_file>\n" unless @ARGV == 2;
 
 my ($distance_between_peaks, $file) = @ARGV;
 
@@ -31,7 +31,7 @@ while (my $line = <INF>) {
 	chomp($line);
 	my @cols = split("\t", $line);
 	if ($cols[3] > 0) { #if this coordinate has a positive count...
-		if ($cols[1] < $prev_coord_plus + $distance_between_peaks) { #if the coordinate is within the specified number of bp of the previous coordinate
+		if ($cols[1] < $prev_coord_plus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
 			$count_sum_plus = $count_sum_plus + $cols[3]; #adds to the sums to eventually calculate the weighted average
 			$weighted_coordinate_sum_plus = $weighted_coordinate_sum_plus + ($cols[1]*$cols[3]);
 			$prev_coord_plus = $cols[1]; #sets the current coordinate as the "previous coordinate" before moving on
@@ -53,7 +53,7 @@ while (my $line = <INF>) {
 		}
 	}
 	elsif ($cols[3] < 0) { #if this coordinate has a negative count...
-		if ($cols[1] < $prev_coord_minus + $distance_between_peaks) { #if the coordinate is within the specified number of bp of the previous coordinate
+		if ($cols[1] < $prev_coord_minus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
 			$count_sum_minus = $count_sum_minus + $cols[3]; #adds to the sums to eventually calculate the weighted average
 			$weighted_coordinate_sum_minus = $weighted_coordinate_sum_minus + ($cols[1]*$cols[3]);
 			$prev_coord_minus = $cols[1]; #sets the current coordinate as the "previous coordinate" before moving on
