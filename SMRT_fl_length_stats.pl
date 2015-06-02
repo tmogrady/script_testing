@@ -140,6 +140,6 @@ else {
 	$cell_read_mean = $cell_read_length_sum/$cell_read_number;
 }
 
-print "Mean of total isoform lengths: $iso_mean\nMean of total read lengths: $read_mean\nMean of mapped isoform lengths: $mapped_iso_mean\nMean of mapped read lengths: $mapped_read_mean\nMean of unmapped isoform lengths: $un_iso_mean\nMean of unmapped read lengths: $un_read_mean\nMean of EBV isoform lengths: $EBV_iso_mean\nMean of EBV read lengths: $EBV_read_mean\nMean of cellular isoform lengths: $cell_iso_mean\nMean of cellular read lengths: $cell_read_mean\n";	
+print "Total number of isoforms\t$iso_number\tMean of total isoform lengths\t$iso_mean\nTotal number of reads\t$read_number\tMean of total read lengths\t$read_mean\nNumber of mapped isoforms\t$mapped_iso_number\tMean of mapped isoform lengths\t$mapped_iso_mean\nNumber of mapped reads\t$mapped_read_number\tMean of mapped read lengths\t$mapped_read_mean\nNumber of unmapped isoforms\t$un_iso_number\tMean of unmapped isoform lengths\t$un_iso_mean\nNumber of unmapped reads\t$un_read_number\tMean of unmapped read lengths\t$un_read_mean\nNumber of EBV isoforms\t$EBV_iso_number\tMean of EBV isoform lengths\t$EBV_iso_mean\nNumber of EBV reads\t$EBV_read_number\tMean of EBV read lengths\t$EBV_read_mean\nNumber of cellular isoforms\t$cell_iso_number\tMean of cellular isoform lengths: $cell_iso_mean\nNumber of cellular reads\t$cell_read_number\tMean of cellular read lengths: $cell_read_mean\n";	
 	
 close(INF);
