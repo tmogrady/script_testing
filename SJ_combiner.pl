@@ -83,3 +83,4 @@ close(OUT2);
 
 system("sort -k1,1 -k2,3n combined_files.temp > combined_files.bed");
 system("rm combined_files.temp");
+system("rm combined_files.txt");
