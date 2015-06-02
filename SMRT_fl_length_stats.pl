@@ -19,6 +19,14 @@ my $mapped_iso_length_sum = 0;
 my $mapped_iso_number = 0;
 my $mapped_read_length_sum = 0;
 my $mapped_read_number = 0;
+my $EBV_iso_length_sum = 0;
+my $EBV_iso_number = 0;
+my $EBV_read_length_sum = 0;
+my $EBV_read_number = 0;
+my $cell_iso_length_sum = 0;
+my $cell_iso_number = 0;
+my $cell_read_length_sum = 0;
+my $cell_read_number = 0;
 
 while (my $line = <INF>) {
 	chomp($line);
@@ -40,6 +48,18 @@ while (my $line = <INF>) {
 		$mapped_iso_number = $mapped_iso_number + 1;
 		$mapped_read_length_sum = $mapped_read_length_sum + ($split_id[1]*$split_id[2]);
 		$mapped_read_number = $mapped_read_number + $split_id[1];		
+		if ($cols[2] eq "chrEBV(Akata_107955to171322_1to107954)") {
+			$EBV_iso_length_sum = $EBV_iso_length_sum + $split_id[2];
+			$EBV_iso_number = $EBV_iso_number + 1;
+			$EBV_read_length_sum = $EBV_read_length_sum + ($split_id[1]*$split_id[2]);
+			$EBV_read_number = $EBV_read_number + $split_id[1];
+		}
+		else {
+			$cell_iso_length_sum = $cell_iso_length_sum + $split_id[2];
+			$cell_iso_number = $cell_iso_number + 1;
+			$cell_read_length_sum = $cell_read_length_sum + ($split_id[1]*$split_id[2]);
+			$cell_read_number = $cell_read_number + $split_id[1];
+		}
 	}
 }
 
@@ -49,7 +69,12 @@ my $un_iso_mean;
 my $un_read_mean;
 my $mapped_iso_mean;
 my $mapped_read_mean;
+my $EBV_iso_mean;
+my $EBV_read_mean;
+my $cell_iso_mean;
+my $cell_read_mean;
 
+#-------------------
 if ($iso_number == 0) {
 	$iso_mean = "NA";
 }
@@ -62,6 +87,7 @@ if ($read_number == 0) {
 else {
 	$read_mean = $read_length_sum/$read_number;
 }
+#-------------------
 if ($un_iso_number == 0) {
 	$un_iso_mean = "NA";
 }
@@ -74,6 +100,7 @@ if ($un_read_number == 0) {
 else {
 	$un_read_mean = $un_read_length_sum/$un_read_number;
 }
+#--------------------
 if ($mapped_iso_number == 0) {
 	$mapped_iso_mean = "NA";
 }
@@ -86,7 +113,33 @@ if ($mapped_read_number == 0) {
 else {
 	$mapped_read_mean = $mapped_read_length_sum/$mapped_read_number;
 }
+#--------------------
+if ($EBV_iso_number == 0) {
+	$EBV_iso_mean = "NA";
+}
+else {
+	$EBV_iso_mean = $EBV_iso_length_sum/$EBV_iso_number;
+}
+if ($EBV_read_number == 0) {
+	$EBV_read_mean = "NA";
+}
+else {
+	$EBV_read_mean = $EBV_read_length_sum/$EBV_read_number;
+}
+#--------------------
+if ($cell_iso_number == 0) {
+	$cell_iso_mean = "NA";
+}
+else {
+	$cell_iso_mean = $cell_iso_length_sum/$cell_iso_number;
+}
+if ($cell_read_number == 0) {
+	$cell_read_mean = "NA";
+}
+else {
+	$cell_read_mean = $cell_read_length_sum/$cell_read_number;
+}
 
-print "Mean of total isoform lengths: $iso_mean\nMean of total read lengths: $read_mean\nMean of mapped isoform lengths: $mapped_iso_mean\nMean of mapped read lengths: $mapped_read_mean\nMean of unmapped isoform lengths: $un_iso_mean\nMean of total read lengths: $un_read_mean\n";	
+print "Mean of total isoform lengths: $iso_mean\nMean of total read lengths: $read_mean\nMean of mapped isoform lengths: $mapped_iso_mean\nMean of mapped read lengths: $mapped_read_mean\nMean of unmapped isoform lengths: $un_iso_mean\nMean of unmapped read lengths: $un_read_mean\nMean of EBV isoform lengths: $EBV_iso_mean\nMean of EBV read lengths: $EBV_read_mean\nMean of cellular isoform lengths: $cell_iso_mean\nMean of cellular read lengths: $cell_read_mean\n";	
 	
 close(INF);
