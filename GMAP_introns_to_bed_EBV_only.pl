@@ -15,6 +15,7 @@ use strict;
 			my ($chr) = $line =~ /\s(.+):/;
 			my ($score) = $line =~ /\>.+\/(\d+)\//;
 			my ($donor, $acceptor) = $line =~ /:(\d+)\.\.(\d+)/;
+			next if $chr ne "chrEBV(Akata_107955to171322_1to107954)";
 			if ($acceptor > $donor) {
 				print OUT $chr, "\t", $donor, "\t", $acceptor - 1, "\t", $id, "\t", $score, "\t+\n";
 			}
@@ -25,10 +26,10 @@ use strict;
 		close(OUT);
 		close(INF);
 		
-		system("sort -k2,3n \Q$file\E.temp | sort -k1,1 > \Q$file\E.sorted.temp"); #sorts so that duplicate introns will be next to each other. Except it doesn't: this doesn't get both the chr order and the coordinate order right
+		system("sort -k2,3n \Q$file\E.temp > \Q$file\E.sorted.temp"); #sorts so that duplicate introns will be next to each other. Except it doesn't: this doesn't get both the chr order and the coordinate order right
 		
 		open(INF2, "<$file.sorted.temp" ) or die "couldn't reopen file";
-		open(OUT2, ">$file.bed");
+		open(OUT2, ">$file.EBV_only.bed");
 		
 		my $count = 0;
 		my $previous_chr = "start";
