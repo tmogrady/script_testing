@@ -75,7 +75,8 @@ while (my $line = <INF2>) {
 
 foreach my $key (sort keys %junctions) { #prints out a(n inadequately) sorted wiggle file
 		my @split_keys = split("\:", $key); 
-		print OUT2 "$split_keys[0]\t$split_keys[1]\t$split_keys[2]\t\.\t$junctions{$key}\t$split_keys[3]\n";
+		my $chrStart = $split_keys[1]-1; #fixes the start coordinate, which is off by 1
+		print OUT2 "$split_keys[0]\t$chrStart\t$split_keys[2]\t\.\t$junctions{$key}\t$split_keys[3]\n";
 }		
 
 close(INF2);
