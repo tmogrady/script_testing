@@ -5,7 +5,7 @@
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
 #USAGE:
-# perl <PATH/read_end_finder.pl> <viral_chromosome_name> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file>
+# perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file>
 
 #TO'G 6/11/2015
 
@@ -31,13 +31,21 @@ print "Enter minimum number of mismatches for Illumina polyA tails (e.g. 2): ";
 my $min_softclip = <STDIN>;
 chomp $min_softclip;
 
-print "Enter desired window for collapsing Illumina 3' ends (e.g. 8):";
+print "Enter desired window for collapsing Illumina 3' ends (e.g. 8): ";
 my $distance_between_ill_peaks = <STDIN>;
 chomp $distance_between_ill_peaks;
 
-print "Enter desired maximum allowable distance between SMRT and Illumina 3' ends (e.g. 8):";
+print "Enter desired maximum allowable distance between SMRT and Illumina 3' ends (e.g. 8): ";
 my $dist_SMRT_ill = <STDIN>;
 chomp $dist_SMRT_ill;
+
+print "Enter minimum number of SMRT reads to report a 3' end (e.g. 5): ";
+my $min_SMRT = <STDIN>;
+chomp $min_SMRT;
+
+print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1): ";
+my $min_ill = <STDIN>;
+chomp $min_ill;
 
 print "------------------------------------------------\n";
 
@@ -96,8 +104,6 @@ close(OUT1);
 close(OUT2);
 close(OUT3);
 
-system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp > \Q$SMRT_file\E.\Q$viral_chr\E.sorted.plus.sam.read_ends.wig"); #properly sorts the wiggle file
-system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp");
 system("rm \Q$SMRT_file\E.sorted.plus.sam.soft_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.plus.sam.non_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
@@ -106,7 +112,7 @@ system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
 open(INF, "<$SMRT_file.sorted.minus.sam.temp") or die "couldn't open file";
 open(OUT1, ">$SMRT_file.sorted.minus.sam.soft_clipped_reads.sam.temp") or die "couldn't open file";
 open(OUT2, ">$SMRT_file.sorted.minus.sam.non_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT3, ">$SMRT_file.$viral_chr.sorted.minus.sam.read_ends.wig") or die "couldn't open file";
+open(OUT3, ">$SMRT_file.sorted.minus.sam.read_ends.wig.temp") or die "couldn't open file";
 
 my $previous_coordinate=1;
 my $count=0;
@@ -148,13 +154,29 @@ close(OUT1);
 close(OUT2);
 close(OUT3);
 
-system("cat \Q$SMRT_file\E.\Q$viral_chr\E.sorted.plus.sam.read_ends.wig \Q$SMRT_file\E.\Q$viral_chr\E.sorted.minus.sam.read_ends.wig | sort -k2,3n > \Q$SMRT_file\E.all_read_ends.wig.temp");
+system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.wig.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.wig.noheader");
+
+system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp");
+system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.wig.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.soft_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.non_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 
+#add header to wiggle file
+open(INF, "<$SMRT_file.$viral_chr.all_read_ends.wig.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.all_read_ends.wig") or die "couldn't open file";
+
+print OUT "track type=wiggle name=\"$SMRT_file.$viral_chr.all_read_ends.wig\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
+
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.wig.noheader");
+
 #make a bed file from the SMRT wiggle file:
-open(INF, "<$SMRT_file.all_read_ends.wig.temp") or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.all_read_ends.wig") or die "couldn't open file";
 open(OUT, ">$SMRT_file.ends.temp.bed") or die "couldn't open file";
 
 print "Combining SMRT 3' ends within $distance_between_SMRT_peaks of each other and calculating consensus 3' ends...\n";
@@ -163,9 +185,21 @@ collapse_wiggle($distance_between_SMRT_peaks);
 close(INF);
 close(OUT);
 
-system("sort -k 1,1 -k 2,2n \Q$SMRT_file.ends.temp.bed\E > \Q$SMRT_file.ends.bed\E");
+system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.ends.temp.bed > \Q$SMRT_file\E.ends.bed.noheader");
 system("rm \Q$SMRT_file.ends.temp.bed\E");
-system("rm \Q$SMRT_file\E.all_read_ends.wig.temp");
+
+#add header to bed file
+open(INF, "<$SMRT_file.ends.bed.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.ends.bed") or die "couldn't open file";
+
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.ends.bed\" description=\"consensus 3' ends of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
+
+system("rm \Q$SMRT_file\E.ends.bed.noheader");
 
 #####----------ILLUMINA FILE PROCESSING-------------######
 
@@ -303,14 +337,27 @@ print OUT "$chrom_minus\t$coordinate_m\t$coordinate_m\t-$count_m\n";
 close(INF);
 close(OUT);
 
-system("sort -k 1,1 -k 2,2n \Q$ill_file.polyA_sites.temp.wig\E > \Q$ill_file.polyA_sites.wig\E");
-system("rm \Q$ill_file.polyA_sites.temp.wig\E");
-system("rm \Q$ill_file.polyA_sites.temp\E.sorted");
-system("rm \Q$ill_file.polyA_sites.temp\E");
+system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.wig > \Q$ill_file\E.polyA_sites.wig.noheader");
+system("rm \Q$ill_file\E.polyA_sites.temp.wig");
+system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
+system("rm \Q$ill_file\E.polyA_sites.temp");
+
+#add header to wiggle file
+open(INF, "<$ill_file.polyA_sites.wig.noheader") or die "couldn't open file";
+open(OUT, ">$ill_file.$viral_chr.polyA_sites.wig") or die "couldn't open file";
+
+print OUT "track type=wiggle name=\"$ill_file.$viral_chr.polyA_sites.wig\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
+
+system("rm \Q$ill_file\E.polyA_sites.wig.noheader");
 
 #make a bed file from the Illumina wiggle file:
-open(INF, "<$ill_file.polyA_sites.wig") or die "couldn't open file";
-open(OUT, ">$ill_file.polyA_sites.temp.bed") or die "couldn't open file";
+open(INF, "<$ill_file.$viral_chr.polyA_sites.wig") or die "couldn't open file";
+open(OUT, ">$ill_file.$viral_chr.polyA_sites.temp.bed") or die "couldn't open file";
 
 print "Combining Illumina polyA tails within $distance_between_ill_peaks of each other and calculating consensus 3' ends...\n";
 collapse_wiggle($distance_between_ill_peaks);
@@ -318,12 +365,25 @@ collapse_wiggle($distance_between_ill_peaks);
 close(INF);
 close(OUT);
 
-system("sort -k 1,1 -k 2,2n \Q$ill_file.polyA_sites.temp.bed\E > \Q$ill_file.polyA_sites.bed\E");
-system("rm \Q$ill_file.polyA_sites.temp.bed\E");
+system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
+system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.temp.bed\E");
+
+#add header to bed file
+open(INF, "<$ill_file.$viral_chr.polyA_sites.bed.noheader") or die "couldn't open file";
+open(OUT, ">$ill_file.$viral_chr.polyA_sites.bed") or die "couldn't open file";
+
+print OUT "track type=bed name=\"$ill_file.$viral_chr.polyA_sites.bed\" description=\"consensus polyA sites of Illumina reads with tails of 5 As with 2 mismatches within $distance_between_ill_peaks bp collapsed to weighted centers from end_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
+
+system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
 
 #####----------SEEKING ILLUMINA SUPPORT FOR SMRT ENDS-------------######
 
-open(INF, "<$ill_file.polyA_sites.bed" ) or die "couldn't open file";
+open(INF, "<$ill_file.$viral_chr.polyA_sites.bed" ) or die "couldn't open file";
 
 print "Extracting SMRT 3' ends within $dist_SMRT_ill bases of Illumina polyA tails...\n";
 
@@ -331,6 +391,7 @@ my %features_ill;
 
 while(my $line = <INF> ) {
 	chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
 	my @cols = split("\t", $line);
 	my $key_combo_ill = "$cols[0]:$cols[1]:$cols[2]:$cols[5]"; #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand
 	$features_ill{$key_combo_ill} = $cols[4]; #enters a count value for the key into the hash
@@ -338,14 +399,19 @@ while(my $line = <INF> ) {
 
 close(INF);
 
-open(INF, "<$SMRT_file.ends.bed" ) or die "couldn't open file";
-open(OUT, ">$SMRT_file.ends.bed.illumina_support.bed");
+open(INF, "<$SMRT_file.$viral_chr.ends.bed" ) or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed");
+
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"consensus SMRT 3' ends of collapse value 8 supported within $dist_SMRT_ill bp by Illumina polyA sites of 5As, 2 mismatches, collapse window 8 from end_finder_sam_to_bed.pl\"\n";
 
 while(my $line = <INF>) {
 	chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
 	my @SMRT_cols = split("\t", $line);
+    next if (abs $SMRT_cols[4] < $min_SMRT);
     foreach my $key_combo_ill (keys %features_ill) {
         my @ill_cols = split(":", $key_combo_ill);
+        next if (abs $features_ill{$key_combo_ill} < $min_ill);
         my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
         if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] > $lower_limit) and ($ill_cols[1]<$upper_limit)) {
@@ -359,7 +425,7 @@ while(my $line = <INF>) {
 close(OUT);
 close(INF);
 
-
+#########################
 sub collapse_wiggle {
     my ($distance_between_peaks) = shift;
     my $prev_coord_plus = 1;
@@ -381,6 +447,7 @@ sub collapse_wiggle {
     
     while (my $line = <INF>) {
         chomp($line);
+        next if ($line =~ /^track/); #skips the track definition line
         my @cols = split("\t", $line);
         if ($cols[3] > 0) { #if this coordinate has a positive count...
             if ($cols[1] < $prev_coord_plus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
