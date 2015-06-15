@@ -12,10 +12,9 @@
 use warnings;
 use strict;
 
-my $SMRT_file = shift;
-my $ill_file = shift;
+my ($SMRT_file, $ill_file) = @ARGV;
 
-print "Enter name of viral chromosome (e.g. chrEBV\(Akata_107955to171322_1to107954\): ";
+print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
@@ -204,7 +203,7 @@ system("rm \Q$SMRT_file\E.ends.bed.noheader");
 #####----------ILLUMINA FILE PROCESSING-------------######
 
 open(INF, "<$ill_file") or die "couldn't open input file";
-open(OUT1, ">$ill_file.polyA_ends.temp") or die "couldn't open output file";
+open(OUT, ">$ill_file.polyA_ends.temp") or die "couldn't open output file";
 
 print "Extracting Illumina reads with at least $min_As As and at least $min_softclip mismatches...\n";
 
@@ -217,7 +216,7 @@ while (my $line = <INF>) {
         if (($cols[5] =~ m/\d+S$/) and ($cols[9] =~ m/A{$min_As}$/)) { # selects reads with softclipping and a run of As at the end
             my ($softclips) = $cols[5] =~ m/(\d+)S$/; #pulls out the number of softclipped bases
             if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
-                print OUT1 $line, "\n";
+                print OUT $line, "\n";
             }
         }
     }
@@ -225,14 +224,14 @@ while (my $line = <INF>) {
         if (($cols[5] =~ m/^\d+S/) and ($cols[9] =~ m/^T{$min_As}/)) { #selects reads with softclipping and a run of Ts at the beginning
             my ($softclips) = $cols[5] =~ m/^(\d+)S/; #pulls out the number of softclipped bases
             if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
-                print OUT1 $line, "\n";
+                print OUT $line, "\n";
             }
         }
     }
 }
 
 close(INF);
-close(OUT1);
+close(OUT);
 
 system ("sort -k 3,3 -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
 system ("rm \Q$ill_file\E.polyA_ends.temp");
@@ -416,7 +415,7 @@ while(my $line = <INF>) {
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
         if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] > $lower_limit) and ($ill_cols[1]<$upper_limit)) {
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill\t$count\n";
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill\t$count\t$SMRT_cols[5]\n";
             last;
         }
     }
