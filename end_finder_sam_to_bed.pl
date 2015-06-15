@@ -1,18 +1,18 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data and a SAM file using Illumina data. Counts the number of non-clipped reads with 3' ends at each genomic position and estimates consensus locations of clusters of 3 ends. Output includes wiggle files of all 3' ends and bed files of the weighted centers of end clusters. 
+#Accepts a SAM file using SMRT fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped reads SMRT with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes wiggle files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of SMRT 3' ends supported by either the annotation or the Illumina data.
 
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
 #USAGE:
-# perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file>
+# perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
 
 #TO'G 6/11/2015
 
 use warnings;
 use strict;
 
-my ($SMRT_file, $ill_file) = @ARGV;
+my ($SMRT_file, $ill_file, $ann_file) = @ARGV;
 
 print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
 my $viral_chr = <STDIN>;
@@ -45,6 +45,10 @@ chomp $min_SMRT;
 print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1): ";
 my $min_ill = <STDIN>;
 chomp $min_ill;
+
+print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 15): ";
+my $ann_dist = <STDIN>;
+chomp $ann_dist;
 
 print "------------------------------------------------\n";
 
@@ -399,30 +403,122 @@ while(my $line = <INF> ) {
 close(INF);
 
 open(INF, "<$SMRT_file.$viral_chr.ends.bed" ) or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed");
-
-print OUT "track type=bed name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"consensus SMRT 3' ends of collapse value 8 supported within $dist_SMRT_ill bp by Illumina polyA sites of 5As, 2 mismatches, collapse window 8 from end_finder_sam_to_bed.pl\"\n";
+open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp");
 
 while(my $line = <INF>) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @SMRT_cols = split("\t", $line);
     next if (abs $SMRT_cols[4] < $min_SMRT);
+    my $found_flag=0;
     foreach my $key_combo_ill (keys %features_ill) {
         my @ill_cols = split(":", $key_combo_ill);
         next if (abs $features_ill{$key_combo_ill} < $min_ill);
         my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
-        if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] > $lower_limit) and ($ill_cols[1]<$upper_limit)) {
+        if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] > $lower_limit) and ($ill_cols[1] < $upper_limit)) {
+            my $name = "$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill";
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill\t$count\t$SMRT_cols[5]\n";
-            last;
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+            $found_flag = 1;
+            last; #if the SMRT end is supported by more than one Illumina polyA pileup, only one is reported
         }
+    }
+    if ($found_flag == 0) {
+        my @range_cols = split (":", $SMRT_cols[3]);
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
 close(OUT);
 close(INF);
+
+
+#####----------COMPARING TO ANNOTATED ENDS-------------######
+open(INF, "<$ann_file" ) or die "couldn't open file";
+open(OUT, ">$ann_file.ends_only.bed");
+
+print "Processing annotation file...\n";
+
+#extract 3' ends from the annotation file:
+my @annotated_ends;
+my $plus_prev_chr = 0;
+my $plus_prev_coord = 0;
+my $minus_prev_chr = 0;
+my $minus_prev_coord = 0;
+
+while(my $line = <INF>) {
+    chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
+	my @ann_cols = split("\t", $line);
+    if ($ann_cols[5] eq "+") {
+        if ($ann_cols[2] != $plus_prev_coord) {
+            push (@annotated_ends, "$ann_cols[0]:$ann_cols[2]:$ann_cols[3]:$ann_cols[5]");
+            $plus_prev_coord = $ann_cols[0];
+            $plus_prev_coord = $ann_cols[2];
+        }
+    }
+    elsif ($ann_cols[5] eq "-"){
+        if ($ann_cols[1] != $minus_prev_coord) {
+            push (@annotated_ends, "$ann_cols[0]:$ann_cols[1]:$ann_cols[3]:$ann_cols[5]");
+            $minus_prev_chr = $ann_cols[0];
+            $minus_prev_coord = $ann_cols[1];
+        }
+    }
+}
+
+foreach (@annotated_ends){
+    print OUT "$_\n";
+}
+
+close(INF);
+close(OUT);
+
+#compare ends in the altered SMRT ends file (that already has info about Illumina ends) with annotated ends
+
+open(INF, "<$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp" ) or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.validated_ends.bed");
+
+print "Comparing SMRT ends to annotated ends...\n";
+
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"consensus SMRT 3' ends of collapse value 8 supported by at least $min_SMRT reads within $dist_SMRT_ill bp of Illumina polyA sites of 5As, 2 mismatches, at least $min_ill reads, collapse window 8 or within $ann_dist of annotated ends. From end_finder_sam_to_bed.pl\"\n";
+
+my $annotated_found_by_SMRT;
+my $novel_found_by_SMRT_ill;
+
+while(my $line = <INF>) {
+    chomp($line);
+    my @SMRT_cols = split("\t", $line);
+    my $found_flag=0;
+    foreach my $ann_end (@annotated_ends) {
+        my @ann_cols = split(":", $ann_end);
+        my $lower_limit = $ann_cols[1]-$ann_dist;
+        my $upper_limit = $ann_cols[1]+$ann_dist;
+        if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>$lower_limit) and ($SMRT_cols[1]<$upper_limit)) {
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+            $found_flag = 1;
+            $annotated_found_by_SMRT++;
+            last;
+        }
+    }
+    if ($found_flag == 0) {
+        if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) {
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+            $novel_found_by_SMRT_ill++;
+        }
+    }
+}
+
+my $annotated = scalar @annotated_ends;
+my $total_found = $annotated_found_by_SMRT + $novel_found_by_SMRT_ill;
+
+print "------------------------------------------------\n";
+print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel. $annotated_found_by_SMRT are annotated (out of $annotated total annotated).\n";
+
+close(INF);
+close(OUT);
+
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp\E");
 
 #########################
 sub collapse_wiggle {
