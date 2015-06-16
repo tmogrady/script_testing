@@ -436,7 +436,7 @@ close(INF);
 
 #####----------COMPARING TO ANNOTATED ENDS-------------######
 open(INF, "<$ann_file" ) or die "couldn't open file";
-open(OUT, ">$ann_file.ends_only.bed");
+#open(OUT, ">$ann_file.ends_only.bed");
 
 print "Processing annotation file...\n";
 
@@ -467,12 +467,12 @@ while(my $line = <INF>) {
     }
 }
 
-foreach (@annotated_ends){
-    print OUT "$_\n";
-}
+#foreach (@annotated_ends){
+#    print OUT "$_\n";
+#}
 
 close(INF);
-close(OUT);
+#close(OUT);
 
 #compare ends in the altered SMRT ends file (that already has info about Illumina ends) with annotated ends
 
