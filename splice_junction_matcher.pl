@@ -5,14 +5,14 @@
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
 #USAGE:
-# perl <PATH/splice_junction_matcher.pl> </PATH/SMRT_introns_file> </PATH/Illumina_SJ.out.tab_file>
+# perl <PATH/splice_junction_matcher.pl> </PATH/SMRT_introns_file> </PATH/Illumina_SJ.out.tab_file> </PATH/transcript_annotation_bed_file> <coordinates_to_ignore_bed_file(optional)> 
 
 #TO'G 6/11/2015
 
 use warnings;
 use strict;
 
-my ($SMRT_jfile, $ill_jfile, $ann_file) = @ARGV;
+my ($SMRT_jfile, $ill_jfile, $ann_file, $ig_file) = @ARGV;
 
 print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
 my $viral_chr = <STDIN>;
@@ -115,14 +115,54 @@ print OUT "$minus_previous_chr\t$minus_previous_start\t$minus_previous_end\t$min
 close(OUT);
 close(INF);
 
-system("sort -k2,3n \Q$SMRT_jfile\E.bed.temp > \Q$SMRT_jfile\E.\Q$viral_chr\E.bed.noheader");
+system("sort -k2,3n \Q$SMRT_jfile\E.bed.temp > \Q$SMRT_jfile\E.\Q$viral_chr\E.bed.sorted.temp");
 system("rm \Q$SMRT_jfile\E.temp");
 system("rm \Q$SMRT_jfile.sorted\E.temp");
 system("rm \Q$SMRT_jfile\E.bed.temp");
 
+#if an annotation file of regions to be ignored is supplied, remove the SMRT junctions with a donor or acceptor in those regions:
+if (defined $ig_file) {
+    open(INF, "<$ig_file");
+    print "Removing SMRT junctions with donor or acceptor in ignored region...\n";
+    my @ig_coords;
+    while(my $line = <INF>) {
+        chomp($line);
+        my @cols = split("\t", $line);
+        my $ig_coord = "$cols[1]:$cols[2]";
+        push (@ig_coords, $ig_coord);
+    }
+    close(INF);
+    
+    open(INF, "<$SMRT_jfile.$viral_chr.bed.sorted.temp") or die "couldn't open file";
+    open(OUT, ">$SMRT_jfile.$viral_chr.bed.noheader");
+    
+    while(my $line = <INF>) {
+        chomp($line);
+        my @cols = split( "\t", $line );
+        my $found_flag=0;
+        foreach my $ig_coord (@ig_coords) {
+            my ($ig_start, $ig_end) = split (":", $ig_coord);
+            if ((($cols[1] >= $ig_start) and ($cols[1] <= $ig_end)) || (($cols[2] >= $ig_start) and ($cols[2] <= $ig_end))) {
+                $found_flag = 1;
+                last;
+            }
+        }
+        if ($found_flag == 0) {
+            print OUT $line, "\n";
+        }
+    }
+    
+    close(INF);
+    close(OUT);
+}
 
 #add header to bed file
-open(INF, "<$SMRT_jfile.$viral_chr.bed.noheader") or die "couldn't open file";
+if (defined $ig_file) {
+    open(INF, "<$SMRT_jfile.$viral_chr.bed.noheader") or die "couldn't open file";
+}
+else {
+    open(INF, "<$SMRT_jfile.$viral_chr.bed.sorted.temp") or die "couldn't open file";
+}
 open(OUT, ">$SMRT_jfile.$viral_chr.bed") or die "couldn't open file";
 
 print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.bed\" description=\"SMRT introns from splice_junction_matcher.pl\"\n";
@@ -132,7 +172,11 @@ while (my $line = <INF>) {
 close(OUT);
 close(INF);
 
-system("rm \Q$SMRT_jfile\E.\Q$viral_chr\E.bed.noheader");
+if (defined $ig_file) {
+    system("rm \Q$SMRT_jfile\E.\Q$viral_chr\E.bed.noheader");
+}
+system("rm \Q$SMRT_jfile\E.\Q$viral_chr\E.bed.sorted.temp");
+
 
 #####----------STAR/ILLUMINA FILE CONVERSION-------------######
 
@@ -154,9 +198,54 @@ while(my $line = <INF> ) {
 close(OUT);
 close(INF);
 
+#if an annotation file of regions to be ignored is supplied, remove the SMRT junctions with a donor or acceptor in those regions:
+if (defined $ig_file) {
+    open(INF, "<$ig_file");
+    print "Removing Illumina junctions with donor or acceptor in ignored region...\n";
+    my @ig_coords;
+    while(my $line = <INF>) {
+        chomp($line);
+        my @cols = split("\t", $line);
+        my $ig_coord = "$cols[1]:$cols[2]";
+        push (@ig_coords, $ig_coord);
+    }
+    close(INF);
+    
+    open(INF, "<$ill_jfile.$viral_chr.bed") or die "couldn't open file";
+    open(OUT, ">$ill_jfile.$viral_chr.no_ignored.bed");
+    
+    print OUT "track type=bed name=\"$ill_jfile.$viral_chr.no_ignored.bed\" description=\"Illumina STAR introns from splice_junction_matcher.pl\"\n";
+    
+    while(my $line = <INF>) {
+        chomp($line);
+        next if ($line =~ /^track/); #skips the track definition line
+        my @cols = split( "\t", $line );
+        my $found_flag=0;
+        foreach my $ig_coord (@ig_coords) {
+            my ($ig_start, $ig_end) = split (":", $ig_coord);
+            if ((($cols[1] >= $ig_start) and ($cols[1] <= $ig_end)) || (($cols[2] >= $ig_start) and ($cols[2] <= $ig_end))) {
+                $found_flag = 1;
+                last;
+            }
+        }
+        if ($found_flag == 0) {
+            print OUT $line, "\n";
+        }
+    }
+    
+    close(INF);
+    close(OUT);
+    system("rm \Q$ill_jfile\E.\Q$viral_chr\E.bed");
+}
+
 #####----------GMAP/ILLUMINA COMPARISON-------------######
 
-open(INF, "<$ill_jfile.$viral_chr.bed" ) or die "couldn't open file";
+if (defined $ig_file) {
+    open(INF, "<$ill_jfile.$viral_chr.no_ignored.bed" ) or die "couldn't open file";
+}
+else {
+    open(INF, "<$ill_jfile.$viral_chr.bed" ) or die "couldn't open file";
+}
 
 print "Checking for matching splice junctions...\n";
 
@@ -202,7 +291,7 @@ print "Processing annotation file...\n";
 
 my @intron_start;
 my @intron_end;
-my @ann_intron_coord_pair = ();
+my %ann_intron_coord_pair;
 my $start;
 my $end;
 
@@ -222,12 +311,49 @@ while (my $line = <INF>) {
         $end = $cols[1] + $block_starts[$i2];
         push(@intron_end, $end);
     }
-    for (my $i3 = 0; $i3 < $intron_number; $i3 = $i3 + 1) { #for the transcript currently in the "while" loop, matches up intron start and end sites to create an array of complete intron coordinates relative to the genome
+    for (my $i3 = 0; $i3 < $intron_number; $i3 = $i3 + 1) { #for the transcript currently in the "while" loop, matches up intron start and end sites to create a hash of complete intron coordinates relative to the genome
         my $intron_coords = "$cols[0]:$intron_start[$i3]:$intron_end[$i3]:$cols[5]";
-        push (@ann_intron_coord_pair, $intron_coords);
+        if (exists $ann_intron_coord_pair{$intron_coords}) {
+            $ann_intron_coord_pair{$intron_coords} = $ann_intron_coord_pair{$intron_coords} + 1; #if the intron is already in the hash (from another transcript), increase the count
+        }
+        else {
+            $ann_intron_coord_pair{$intron_coords} = 1; #if the intron is not already in the hash, adds it with a value of 1
+        }
     }
     @intron_start = ();
-    @intron_end = (); #intron starts and ends have been assigned to the @intron_coords array; empty them for the next transcript
+    @intron_end = (); #intron starts and ends have been assigned to the %ann_intron_pair hash; empty them for the next transcript
+}
+
+my $ann_count;
+
+if (defined $ig_file) {
+    open(INF, "<$ig_file");
+    my @ig_coords;
+    while(my $line = <INF>) {
+        chomp($line);
+        my @cols = split("\t", $line);
+        my $ig_coord = "$cols[1]:$cols[2]";
+        push (@ig_coords, $ig_coord);
+    }
+    close(INF);
+    
+    foreach my $ann_intron_coord_pair (keys %ann_intron_coord_pair) {
+        my ($ann_chr, $ann_start, $ann_end, $ann_strand) = split (":", $ann_intron_coord_pair);
+        my $found_flag = 0;
+        foreach my $ig_coord (@ig_coords) {
+            my ($ig_start, $ig_end) = split (":", $ig_coord);
+            if ((($ann_start >= $ig_start) and ($ann_start <= $ig_end)) || (($ann_end >= $ig_start) and ($ann_end <= $ig_end))) {
+                $found_flag = 1;
+                last;
+            }
+        }
+        if ($found_flag == 0) {
+            $ann_count++;
+        }
+    }
+}
+else {
+    $ann_count = scalar (keys %ann_intron_coord_pair);
 }
 
 close(INF);
@@ -241,25 +367,31 @@ print "Comparing SMRT junctions to annotation file...\n";
 
 print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.validated_introns.bed\" description=\"Introns detected by SMRT with read depth at least $min_SMRTj supported by Illumina-detected junctions with read depth at least $min_illj and/or annotation. From splice_junction_matcher.pl\"\n";
 
+my $val_SMRT_count;
+my $ann_SMRT_count;
+my $nov_SMRT_count;
+
 while (my $line = <INF>) {
     chomp($line);
     my @SMRT_cols = split("\t", $line);
-    my $found_flag=0;
-    foreach my $ann_intron_coords (@ann_intron_coord_pair) {
-        my @ann_cols = split (":", $ann_intron_coords);
-        if (($SMRT_cols[0] eq $ann_cols[0]) and ($SMRT_cols[1] == $ann_cols[1]) and ($SMRT_cols[2] == $ann_cols[2]) and ($SMRT_cols[5] eq $ann_cols[3])) {
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
-            $found_flag = 1;
-            last;
-        }
+    my $SMRT_intron_coords = "$SMRT_cols[0]:$SMRT_cols[1]:$SMRT_cols[2]:$SMRT_cols[5]"; #creates a key to search the has of annotated introns
+    if (exists $ann_intron_coord_pair{$SMRT_intron_coords}) { #if the intron matches an annotated intron, notes that and prints out the line
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
+        $ann_SMRT_count++;
+        $val_SMRT_count++;
     }
-    if ($found_flag == 0) {
-        if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) {
+    else {
+        if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) { #if the intron doesn't match an annotated intron but does have Illumina support, notes that and prints out the line
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
+            $nov_SMRT_count++;
+            $val_SMRT_count++;
         }
     }
 }
 close(OUT);
 close(INF);
 
+print "$val_SMRT_count validated junctions detected in the SMRT file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
+
 system ("rm \Q$SMRT_jfile\E.\Q$viral_chr\E.illumina_support.bed.temp");
+
