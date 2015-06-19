@@ -560,9 +560,9 @@ sub collapse_wiggle {
                     $first_plus = 0;
                 }
                 else {
-                    $weighted_average_plus = $weighted_coordinate_sum_plus/$count_sum_plus; #calculates weighted average
-                    $chrStart_plus = $coords_plus[0];
-                    $chrEnd_plus = pop(@coords_plus);
+                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1; #calculates weighted average, subtracts 1 to make it 0-based for bed file
+                    $chrStart_plus = $coords_plus[0] - 1;
+                    $chrEnd_plus = pop(@coords_plus) - 1;
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_plus = ($cols[1]);
                     $count_sum_plus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
@@ -587,9 +587,9 @@ sub collapse_wiggle {
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus; #calculates weighted average
-                    $chrStart_minus = $coords_minus[0];
-                    $chrEnd_minus = pop(@coords_minus);
+                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1; #calculates weighted average
+                    $chrStart_minus = $coords_minus[0] - 1;
+                    $chrEnd_minus = pop(@coords_minus) - 1;
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_minus = ($cols[1]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
@@ -601,16 +601,16 @@ sub collapse_wiggle {
     }
     
     if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-        $weighted_average_plus = $weighted_coordinate_sum_plus/$count_sum_plus;
-        $chrStart_plus = $coords_plus[0];
-        $chrEnd_plus = pop(@coords_plus);
+        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1;
+        $chrStart_plus = $coords_plus[0] - 1;
+        $chrEnd_plus = pop(@coords_plus) - 1;
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus;
-        $chrStart_minus = $coords_minus[0];
-        $chrEnd_minus = pop(@coords_minus);
+        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1;
+        $chrStart_minus = $coords_minus[0] - 1;
+        $chrEnd_minus = pop(@coords_minus) - 1;
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
     }
 }
