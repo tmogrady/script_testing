@@ -12,6 +12,8 @@
 use warnings;
 use strict;
 
+die "USAGE: 'perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+
 my ($SMRT_file, $ill_file, $ann_file) = @ARGV;
 
 print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
