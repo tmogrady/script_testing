@@ -191,8 +191,7 @@ while(my $line = <INF> ) {
     my @cols = split( "\t", $line );
     tr/12/+-/ foreach ($cols[3]);	#change the numeric strand indicators to + or -
     next if $cols[0] ne $viral_chr; #skip lines that aren't viral
-    my $chrStart = $cols[1]-1; #fixes the start coordinate, which is off by 1
-    print OUT "$cols[0]\t$chrStart\t$cols[2]\t$cols[4]\t$cols[6]\t$cols[3]\n";
+    print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[4]\t$cols[6]\t$cols[3]\n";
 }
 
 close(OUT);
