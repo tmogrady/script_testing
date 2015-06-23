@@ -24,13 +24,14 @@ foreach my $file(@ARGV) {
 		next if ($line =~ m/\@/); # this is to get rid of header lines in sam files. 
 		
 		my @split_line = split("\t", $line);
-		
+        my @split_id = split("\/", $split_line[0]);
+        		
 		my $strand;
 		my $chr = $split_line[2];
 		my $chr_start = $split_line[3] - 1;
 		my $chr_end = 0;
 		my $feature_name = $split_line[0];
-		my $score = 1000;
+		my $score = $split_id[1];
 		my $color = "133,0,33";
 		
 		
