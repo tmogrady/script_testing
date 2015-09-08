@@ -134,7 +134,7 @@ while (my $line = <INF>) {
         print OUT2 $line, "\n";
         #uses Erik's counting method that should take less memory than the hash method, but only works for coordinates that can be obtained directly from the sorted sam file without having to calculate from the CIGAR string
         my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
-        if ($cols[2] eq $previous_chr && $cols[3] == $previous_coordinate) { 
+        if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
             $count = $count + $split_id[1]; #increases the count by the read depth for the putative isoform		
         }
         else {
