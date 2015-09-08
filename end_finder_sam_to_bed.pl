@@ -48,7 +48,7 @@ print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1)
 my $min_ill = <STDIN>;
 chomp $min_ill;
 
-print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 15): ";
+print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 20): ";
 my $ann_dist = <STDIN>;
 chomp $ann_dist;
 
@@ -418,7 +418,7 @@ while(my $line = <INF>) {
         next if (abs $features_ill{$key_combo_ill} < $min_ill);
         my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
-        if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] > $lower_limit) and ($ill_cols[1] < $upper_limit)) {
+        if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] >= $lower_limit) and ($ill_cols[1] <= $upper_limit)) {
             my $name = "$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill";
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
@@ -496,7 +496,7 @@ while(my $line = <INF>) {
         my @ann_cols = split(":", $ann_end);
         my $lower_limit = $ann_cols[1]-$ann_dist;
         my $upper_limit = $ann_cols[1]+$ann_dist;
-        if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>$lower_limit) and ($SMRT_cols[1]<$upper_limit)) {
+        if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $found_flag = 1;
             $annotated_found_by_SMRT++;
