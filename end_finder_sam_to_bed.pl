@@ -443,6 +443,7 @@ open(INF, "<$ann_file" ) or die "couldn't open file";
 print "Processing annotation file...\n";
 
 #extract 3' ends from the annotation file:
+#annotation file must be sorted by chrStart then chrEnd!
 my @annotated_ends;
 my $plus_prev_chr = 0;
 my $plus_prev_coord = 0;
@@ -473,6 +474,8 @@ while(my $line = <INF>) {
 #    print OUT "$_\n";
 #}
 
+my $annotated = scalar @annotated_ends;
+
 close(INF);
 #close(OUT);
 
@@ -487,6 +490,7 @@ print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_s
 
 my $annotated_found_by_SMRT;
 my $novel_found_by_SMRT_ill;
+my $SMRT_annotated; #this is different than $annotated_found_by_SMRT because depending on input parameters two SMRT ends may correspond to a single annotated end or vice versa.
 
 while(my $line = <INF>) {
     chomp($line);
@@ -497,10 +501,15 @@ while(my $line = <INF>) {
         my $lower_limit = $ann_cols[1]-$ann_dist;
         my $upper_limit = $ann_cols[1]+$ann_dist;
         if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
-            $found_flag = 1;
-            $annotated_found_by_SMRT++;
-            last;
+            if ($found_flag == 0) {
+                print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                $found_flag = 1;
+                $annotated_found_by_SMRT++;
+                $SMRT_annotated++;
+            }
+            elsif ($found_flag == 1) {
+                $annotated_found_by_SMRT++;
+            }
         }
     }
     if ($found_flag == 0) {
@@ -511,11 +520,17 @@ while(my $line = <INF>) {
     }
 }
 
-my $annotated = scalar @annotated_ends;
-my $total_found = $annotated_found_by_SMRT + $novel_found_by_SMRT_ill;
+
+my $total_found = $SMRT_annotated + $novel_found_by_SMRT_ill;
 
 print "------------------------------------------------\n";
-print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel. $annotated_found_by_SMRT are annotated (out of $annotated total annotated).\n";
+
+if ($SMRT_annotated != $annotated_found_by_SMRT) {
+    print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single SMRT end or vice versa.\n\n";
+}
+else {
+    print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
+}
 
 close(INF);
 close(OUT);
