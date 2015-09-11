@@ -5,6 +5,7 @@
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
 #to check: Are soft-clipped and non-softclipped read files generated unnecessarily?
+#       Need to adjust final terminal ouput to account for the possibility of finding no annotated/novel start sites
 
 #USAGE:
 # perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
@@ -490,9 +491,9 @@ print "Comparing SMRT ends to annotated ends...\n";
 
 print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"consensus SMRT 3' ends of collapse value 8 supported by at least $min_SMRT reads within $dist_SMRT_ill bp of Illumina polyA sites of 5As, 2 mismatches, at least $min_ill reads, collapse window 8 or within $ann_dist of annotated ends. From end_finder_sam_to_bed.pl\"\n";
 
-my $annotated_found_by_SMRT;
-my $novel_found_by_SMRT_ill;
-my $SMRT_annotated; #this is different than $annotated_found_by_SMRT because depending on input parameters two SMRT ends may correspond to a single annotated end or vice versa.
+my $annotated_found_by_SMRT = 0;
+my $novel_found_by_SMRT_ill = 0;
+my $SMRT_annotated = 0; #this is different than $annotated_found_by_SMRT because depending on input parameters two SMRT ends may correspond to a single annotated end or vice versa.
 
 while(my $line = <INF>) {
     chomp($line);
