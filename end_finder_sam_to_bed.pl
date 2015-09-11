@@ -4,6 +4,8 @@
 
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
+#to check: Are soft-clipped and non-softclipped read files generated unnecessarily?
+
 #USAGE:
 # perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
 
@@ -457,7 +459,7 @@ while(my $line = <INF>) {
     if ($ann_cols[5] eq "+") {
         if ($ann_cols[2] != $plus_prev_coord) {
             push (@annotated_ends, "$ann_cols[0]:$ann_cols[2]:$ann_cols[3]:$ann_cols[5]");
-            $plus_prev_coord = $ann_cols[0];
+            $plus_prev_chr = $ann_cols[0];
             $plus_prev_coord = $ann_cols[2];
         }
     }
