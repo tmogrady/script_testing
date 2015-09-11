@@ -1,6 +1,5 @@
 #!usr/bin/perl
 #Takes a bed file of PacBio SMRT isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
-#NOT FINISHED
 #TO'G 5/14/15
 
 use warnings;
@@ -34,8 +33,8 @@ while (my $line = <INF>) {
 	if ($strand eq "+") {
 		foreach my $valid_start (@valid_start) { #checks to see if the 5' end of the (plus strand) SMRT transcript matches a range of possible start site values from the list of validated start sites
 			my @start_cols = split("\t", $valid_start);
-            my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[3]);
-			if ($strand eq $start_cols[5] && $chromStart >= $range_start && $chromStart <= $range_end) {
+            my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
+			if (($strand eq $start_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
 				$new_start_line = "$line\t$start_cols[1]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
 				print OUT $new_start_line, "\n"; #prints out a file of SMRT reads with validated 5' ends
@@ -46,8 +45,8 @@ while (my $line = <INF>) {
 	elsif ($strand eq "-"){
 		foreach my $valid_start (@valid_start) { #checks to see if the 5' end of the (minus strand) SMRT transcript matches a range of possible start site values from the list of validated start sites
 			my @start_cols = split("\t", $valid_start);
-            my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[3]);
-			if ($strand eq $start_cols[5] && $chromEnd >= $range_start && $chromEnd <= $range_end) {
+            my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
+			if (($strand eq $start_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
 				$new_start_line = "$line\t$start_cols[2]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
 				print OUT $new_start_line, "\n"; #prints out a file of SMRT reads with validated 5' ends
@@ -166,7 +165,7 @@ foreach my $good_start_and_end (@good_start_and_end) { #starts with the array of
 			foreach my $valid_intron (@valid_intron) { #goes through each intron in the array of validated introns
 				my @valid_coords = split("\t", $valid_intron); #allows extraction of the start and end coordinates from each validated intron
 				next if $intron_strand ne $valid_coords[5]; #enforces strand matching
-				if ($coords[0] == $valid_coords[1] && $coords[1] == $valid_coords[2]) {
+				if (($coords[0] == $valid_coords[1]) and ($coords[1] == $valid_coords[2])) {
 					push(@good_intron_counter, $intron_coord_pair);	#puts introns that are validated for this transcript into an array (this really just functions as a counter)
 				}			
 			}
