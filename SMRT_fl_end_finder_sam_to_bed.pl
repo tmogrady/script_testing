@@ -160,7 +160,7 @@ while (my $line = <INF>) {
 				$first_plus = 0;
 			}
 			else {
-				$weighted_average_plus = $weighted_coordinate_sum_plus/$count_sum_plus; #calculates weighted average
+				$weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1; #calculates weighted average. -1 to change from 1-based (SAM and WIG) to 0-based (BED)
                 $chrStart_plus = $coords_plus[0];
                 $chrEnd_plus = pop(@coords_plus);
 				printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
@@ -187,7 +187,7 @@ while (my $line = <INF>) {
 				$first_minus = 0;
 			}
 			else {
-				$weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus; #calculates weighted average
+				$weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus - 1; #calculates weighted average. -1 to change from 1-based (SAM and WIG) to 0-based (BED)
                 $chrStart_minus = $coords_minus[0];
                 $chrEnd_minus = pop(@coords_minus);
 				printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
@@ -201,14 +201,13 @@ while (my $line = <INF>) {
 }
 
 if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-	$weighted_average_plus = $weighted_coordinate_sum_plus/$count_sum_plus;
-    $chrStart_plus = $coords_plus[0];
+	$weighted_average_plus = $weighted_coordinate_sum_plus/$count_sum_plus - 1; #calculates weighted average. -1 to change from 1-based (SAM and WIG) to 0-based (BED)    $chrStart_plus = $coords_plus[0];
     $chrEnd_plus = pop(@coords_plus);
 	printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
 }
 
 if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-	$weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus;
+	$weighted_average_minus = $weighted_coordinate_sum_minus/$count_sum_minus - 1; #calculates weighted average. -1 to change from 1-based (SAM and WIG) to 0-based (BED)
     $chrStart_minus = $coords_minus[0];
     $chrEnd_minus = pop(@coords_minus);
 	printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
