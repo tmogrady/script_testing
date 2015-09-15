@@ -330,7 +330,7 @@ while(my $line = <INF>) {
             last; #if the SMRT start is supported by more than one CAGE cluster, only one is reported
         }
     }
-    if ($found_flag == 0) {
+    if ($found_flag == 0) { #clean this up (just remove?) if you don't want to validate based on SMRT + ann without CAGE
         my @range_cols = split (":", $SMRT_cols[3]);
         #print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
@@ -439,7 +439,7 @@ else {
 close(INF);
 close(OUT);
 
-#system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
 
 #########################
 sub collapse_wiggle {
