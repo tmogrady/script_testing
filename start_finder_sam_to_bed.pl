@@ -7,7 +7,7 @@
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
 #to check: Are soft-clipped and non-softclipped read files generated unnecessarily?
-#       Add headers to output files
+#       Add headers to all output files
 
 #USAGE:
 # perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
@@ -17,9 +17,9 @@
 use warnings;
 use strict;
 
-die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+#die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
-my ($SMRT_file, $CAGE_file, $ann_file) = @ARGV;
+my ($SMRT_file, $CAGE_file, $paraclu_prep_file, $ann_file) = @ARGV;
 
 print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
 my $viral_chr = <STDIN>;
@@ -205,9 +205,11 @@ close(INF);
 system("rm \Q$SMRT_file\E.starts.bed.noheader");
 
 
-#####----------FILTERING PARACLU OUTPUT-------------######
+#####----------PROCESSING PARACLU OUTPUT-------------######
 
 print "Extracting clusters from CAGE file (Containing $min_tags tags, density fold change at least $min_dens, from $min_length to $max_length bp long)\n";
+
+#filtering clusters:
 
 my $length;
 my $dens;
@@ -222,7 +224,7 @@ open(OUT, ">$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") o
 while (my $line = <INF>) {
     chomp($line);
     next if ($line =~ /^#/); #skips the header line
-        my @cols = split("\t", $line);
+    my @cols = split("\t", $line);
     next if ($cols[5] < $min_tags);
     $length = $cols[3] - $cols[2] + 1;
     if (($length >= $min_length) and ($length <= $max_length)) {
@@ -249,10 +251,50 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
+#getting weighted averages of Paraclu peaks:
+
+my $chrStart_CAGE;
+my $chrEnd_CAGE;
+my $strand_CAGE;
+my $CAGE_weighted_sum = 0;
+#my $tag_depth = 0;
+my $CAGE_weighted_average;
+
+open(INF, "<$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
+open(OUT, ">$CAGE_file.peaks_weighted_average.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    $chrStart_CAGE = $cols[1];
+    $chrEnd_CAGE = $cols[2];
+    $strand_CAGE = $cols[5];
+    #$tag_depth = 0;
+    open(INF2, "<$paraclu_prep_file") or die "couldn't open file";
+    while (my $line2 = <INF2>) { #is it a problem to be looping through 2 files at once? Should I slurp one into an array?
+        chomp($line2);
+        my @cols2 = split("\t", $line2);
+        if ((($cols2[2]-1) >= $chrStart_CAGE) and (($cols2[2]-1) <= $chrEnd_CAGE) and ($cols2[1] eq $strand_CAGE)) {
+            $CAGE_weighted_sum = $CAGE_weighted_sum + ($cols2[2]*$cols2[3]);
+            #$tag_depth = $tag_depth + $cols2[3];
+        }
+    }
+    $CAGE_weighted_average = ($CAGE_weighted_sum/$cols[4]) - 1;
+    printf OUT "%s\t%1.0f\t%1.0f\t%s%s%s%s%s\t%s\t%s\n", $cols[0], $CAGE_weighted_average, $CAGE_weighted_average, $chrStart_CAGE, ":", $chrEnd_CAGE, ":", $cols[3], $cols[4], $cols[5];
+    $CAGE_weighted_sum = 0;
+    close(INF2);
+}
+
+close(INF);
+close(OUT);
+
+
+
 
 #####----------SEEKING CAGE SUPPORT FOR SMRT STARTS-------------######
 
-open(INF, "<$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed" ) or die "couldn't open file";
+#open(INF, "<$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed" ) or die "couldn't open file";
+open(INF, "<$CAGE_file.peaks_weighted_average.bed" ) or die "couldn't open file"; #change this back when you revert to outputting a single Paraclu bed file
 
 print "Extracting SMRT 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
 
@@ -261,7 +303,7 @@ my %features_CAGE;
 while(my $line = <INF> ) {
 	chomp($line);
 	my @cols = split("\t", $line);
-	my $key_combo_CAGE = "$cols[0]:$cols[1]:$cols[2]:$cols[5]"; #for each line in the CAGE bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand
+	my $key_combo_CAGE = "$cols[0]:$cols[1]:$cols[2]:$cols[5]"; #for each line in the CAGE bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand. Doesn't really need $cols[2], does it?
 	$features_CAGE{$key_combo_CAGE} = $cols[4]; #enters a count value for the key into the hash
 }
 
