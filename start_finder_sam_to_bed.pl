@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes wiggle files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by either the annotation or the CAGE data.
+#Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes wiggle files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
 
 #For now, accepts a Paraclu output file rather than a CAGE SAM file.
 
@@ -332,7 +332,7 @@ while(my $line = <INF>) {
     }
     if ($found_flag == 0) {
         my @range_cols = split (":", $SMRT_cols[3]);
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        #print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
@@ -439,7 +439,7 @@ else {
 close(INF);
 close(OUT);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
+#system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
 
 #########################
 sub collapse_wiggle {
