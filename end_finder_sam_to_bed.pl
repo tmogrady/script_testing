@@ -410,6 +410,8 @@ close(INF);
 open(INF, "<$SMRT_file.$viral_chr.ends.bed" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp");
 
+my $ill_coord;
+
 while(my $line = <INF>) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
@@ -424,14 +426,15 @@ while(my $line = <INF>) {
         if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] >= $lower_limit) and ($ill_cols[1] <= $upper_limit)) {
             my $name = "$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill";
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+            print OUT "$SMRT_cols[0]\t$ill_cols[1]\t$ill_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
             $found_flag = 1;
+            $ill_coord = $ill_cols[1];
             last; #if the SMRT end is supported by more than one Illumina polyA pileup, only one is reported
         }
     }
     if ($found_flag == 0) {
         my @range_cols = split (":", $SMRT_cols[3]);
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        print OUT "$SMRT_cols[0]\t$ill_coord\t$ill_coord\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
