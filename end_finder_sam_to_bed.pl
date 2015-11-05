@@ -428,13 +428,13 @@ while(my $line = <INF>) {
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
             print OUT "$SMRT_cols[0]\t$ill_cols[1]\t$ill_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
             $found_flag = 1;
-            $ill_coord = $ill_cols[1];
+            $ill_coord = $ill_cols[1]; #allows the last call to be reported
             last; #if the SMRT end is supported by more than one Illumina polyA pileup, only one is reported
         }
     }
     if ($found_flag == 0) {
-        my @range_cols = split (":", $SMRT_cols[3]);
-        print OUT "$SMRT_cols[0]\t$ill_coord\t$ill_coord\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        my @range_cols = split (":", $SMRT_cols[3]); #includes SMRT ends that are not supported by Illumina in this temporary file
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[1]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
