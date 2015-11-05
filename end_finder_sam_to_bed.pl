@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped reads SMRT with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes wiggle files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of SMRT 3' ends supported by either the annotation or the Illumina data.
+#Accepts a SAM file using SMRT fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped reads SMRT with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes bedgraph files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of SMRT 3' ends supported by either the annotation or the Illumina data.
 
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
@@ -67,7 +67,7 @@ system("rm \Q$SMRT_file\E.sorted.temp");
 open(INF, "<$SMRT_file.sorted.plus.sam.temp") or die "couldn't open file";
 open(OUT1, ">$SMRT_file.sorted.plus.sam.soft_clipped_reads.sam.temp") or die "couldn't open file";
 open(OUT2, ">$SMRT_file.sorted.plus.sam.non_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT3, ">$SMRT_file.sorted.plus.sam.read_ends.wig.temp") or die "couldn't open file";
+open(OUT3, ">$SMRT_file.sorted.plus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
 
 my @dist;
 my $sum;
@@ -103,7 +103,7 @@ while (my $line = <INF>) {
     }
 }
 
-foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted wiggle file
+foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted bedgraph file
     my @split_keys = split("\:", $chr_end_coord); 
     print OUT3 "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t$plus_ends{$chr_end_coord}\n";
 }	
@@ -120,7 +120,7 @@ system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
 open(INF, "<$SMRT_file.sorted.minus.sam.temp") or die "couldn't open file";
 open(OUT1, ">$SMRT_file.sorted.minus.sam.soft_clipped_reads.sam.temp") or die "couldn't open file";
 open(OUT2, ">$SMRT_file.sorted.minus.sam.non_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT3, ">$SMRT_file.sorted.minus.sam.read_ends.wig.temp") or die "couldn't open file";
+open(OUT3, ">$SMRT_file.sorted.minus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
 
 my $previous_coordinate=1;
 my $count=0;
@@ -162,33 +162,33 @@ close(OUT1);
 close(OUT2);
 close(OUT3);
 
-system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.wig.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.wig.noheader");
+system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.bedgraph.noheader");
 
-system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.wig.temp");
-system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.wig.temp");
+system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp");
+system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.soft_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.non_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 
-#add header to wiggle file
-open(INF, "<$SMRT_file.$viral_chr.all_read_ends.wig.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.all_read_ends.wig") or die "couldn't open file";
+#add header to bedgraph file
+open(INF, "<$SMRT_file.$viral_chr.all_read_ends.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.all_read_ends.bedgraph") or die "couldn't open file";
 
-print OUT "track type=wiggle name=\"$SMRT_file.$viral_chr.all_read_ends.wig\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedGraph name=\"$SMRT_file.$viral_chr.all_read_ends.bedgraph\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
 close(OUT);
 close(INF);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.wig.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.bedgraph.noheader");
 
-#make a bed file from the SMRT wiggle file:
-open(INF, "<$SMRT_file.$viral_chr.all_read_ends.wig") or die "couldn't open file";
+#make a bed file from the SMRT bedgraph file:
+open(INF, "<$SMRT_file.$viral_chr.all_read_ends.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.ends.temp.bed") or die "couldn't open file";
 
 print "Combining SMRT 3' ends within $distance_between_SMRT_peaks of each other and calculating consensus 3' ends...\n";
-collapse_wiggle($distance_between_SMRT_peaks);
+collapse_bedgraph($distance_between_SMRT_peaks);
 
 close(INF);
 close(OUT);
@@ -249,7 +249,7 @@ open(INF, "<$ill_file.polyA_ends.sam") or die "couldn't open file";
 open(OUT, ">$ill_file.polyA_sites.temp") or die "couldn't open file";
 
 print "Processing Illumina reads with polyA tails...\n";
-#create a file with the corresponding to the polyA ends of the reads, and sort it by those coordinates
+#create a file with the coordinates corresponding to the polyA ends of the reads, and sort it by those coordinates
 
 my $cigar_sum;
 my $cigar_calc;
@@ -277,10 +277,10 @@ close(OUT);
 
 system("sort -k 1,1 -k 2,2n \Q$ill_file.polyA_sites.temp\E > \Q$ill_file.polyA_sites.temp\E.sorted");
 
-#create a wiggle file from the sorted coordinates file
+#create a bedgraph file from the sorted coordinates file
 
-open(INF, "<$ill_file.polyA_sites.temp") or die "couldn't open file";
-open(OUT, ">$ill_file.polyA_sites.temp.wig") or die "couldn't open file";
+open(INF, "<$ill_file.polyA_sites.temp.sorted") or die "couldn't open file";
+open(OUT, ">$ill_file.polyA_sites.temp.bedgraph") or die "couldn't open file";
 
 my $chrom_minus;
 my $previous_coordinate_m=0;
@@ -345,30 +345,30 @@ print OUT "$chrom_minus\t$coordinate_m\t$coordinate_m\t-$count_m\n";
 close(INF);
 close(OUT);
 
-system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.wig > \Q$ill_file\E.polyA_sites.wig.noheader");
-system("rm \Q$ill_file\E.polyA_sites.temp.wig");
+system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.bedgraph > \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+system("rm \Q$ill_file\E.polyA_sites.temp.bedgraph");
 system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
 system("rm \Q$ill_file\E.polyA_sites.temp");
 
-#add header to wiggle file
-open(INF, "<$ill_file.polyA_sites.wig.noheader") or die "couldn't open file";
-open(OUT, ">$ill_file.$viral_chr.polyA_sites.wig") or die "couldn't open file";
+#add header to bedgraph file
+open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$ill_file.$viral_chr.polyA_sites.bedgraph") or die "couldn't open file";
 
-print OUT "track type=wiggle name=\"$ill_file.$viral_chr.polyA_sites.wig\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedGraph name=\"$ill_file.$viral_chr.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
 close(OUT);
 close(INF);
 
-system("rm \Q$ill_file\E.polyA_sites.wig.noheader");
+system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
 
-#make a bed file from the Illumina wiggle file:
-open(INF, "<$ill_file.$viral_chr.polyA_sites.wig") or die "couldn't open file";
+#make a bed file from the Illumina bedgraph file:
+open(INF, "<$ill_file.$viral_chr.polyA_sites.bedgraph") or die "couldn't open file";
 open(OUT, ">$ill_file.$viral_chr.polyA_sites.temp.bed") or die "couldn't open file";
 
 print "Combining Illumina polyA tails within $distance_between_ill_peaks of each other and calculating consensus 3' ends...\n";
-collapse_wiggle($distance_between_ill_peaks);
+collapse_bedgraph($distance_between_ill_peaks);
 
 close(INF);
 close(OUT);
@@ -544,7 +544,7 @@ close(OUT);
 system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp\E");
 
 #########################
-sub collapse_wiggle {
+sub collapse_bedgraph {
     my ($distance_between_peaks) = shift;
     my $prev_coord_plus = 1;
     my $prev_coord_minus = 1;
@@ -583,8 +583,8 @@ sub collapse_wiggle {
                     $first_plus = 0;
                 }
                 else {
-                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1; #calculates weighted average, subtracts 1 to make it 0-based for bed file
-                    $chrStart_plus = $coords_plus[0] - 1;
+                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus); #calculates weighted average, subtracts 1 to make it 0-based for bed file
+                    $chrStart_plus = $coords_plus[0];
                     $chrEnd_plus = pop(@coords_plus);
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_plus = ($cols[1]);
@@ -610,8 +610,8 @@ sub collapse_wiggle {
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1; #calculates weighted average
-                    $chrStart_minus = $coords_minus[0] - 1;
+                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus); #calculates weighted average
+                    $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_minus = ($cols[1]);
@@ -624,15 +624,15 @@ sub collapse_wiggle {
     }
     
     if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1;
-        $chrStart_plus = $coords_plus[0] - 1;
+        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus);
+        $chrStart_plus = $coords_plus[0];
         $chrEnd_plus = pop(@coords_plus);
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1;
-        $chrStart_minus = $coords_minus[0] - 1;
+        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus);
+        $chrStart_minus = $coords_minus[0];
         $chrEnd_minus = pop(@coords_minus);
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
     }
