@@ -4,9 +4,6 @@
 
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
-#to check: Are soft-clipped and non-softclipped read files generated unnecessarily?
-#       Need to adjust final terminal ouput to account for the possibility of finding no annotated/novel start sites
-
 #USAGE:
 # perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
 
@@ -65,9 +62,7 @@ system("rm \Q$SMRT_file\E.sorted.temp");
 
 #processing of PLUS sam file
 open(INF, "<$SMRT_file.sorted.plus.sam.temp") or die "couldn't open file";
-open(OUT1, ">$SMRT_file.sorted.plus.sam.soft_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT2, ">$SMRT_file.sorted.plus.sam.non_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT3, ">$SMRT_file.sorted.plus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
+open(OUT, ">$SMRT_file.sorted.plus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
 
 my @dist;
 my $sum;
@@ -78,49 +73,37 @@ print "Processing SMRT plus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr;
-    if ($cols[5] =~ m/\d+S$/) {	#removes reads soft-clipped at the 3' end
-        print OUT1 $line, "\n";
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
+    next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 3' end
+    while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
+            push (@dist, $1);
+    }
+    $sum += $_ for @dist;
+    my $end_coord = $cols[3] + $sum - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
+    my $chr_end_coord = "$cols[2]\:$end_coord"; #combines the chromosome and 3' end coordinate into a key to use for the hash
+    $sum = 0;
+    @dist = ();
+    my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
+    if (exists $plus_ends{$chr_end_coord}) { #if the key is already in the hash, increases the value (count) by 1
+        $plus_ends{$chr_end_coord} = $plus_ends{$chr_end_coord} + $split_id[1];	
     }
     else {
-        print OUT2 $line, "\n";
-        while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
-                push (@dist, $1);
-        }
-        $sum += $_ for @dist;
-        my $end_coord = $cols[3] + $sum - 1;
-        my $chr_end_coord = "$cols[2]\:$end_coord"; #combines the chromosome and 3' end coordinate into a key to use for the hash
-        $sum = 0;
-        @dist = ();
-        my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id			
-        
-        if (exists $plus_ends{$chr_end_coord}) { #if the key is already in the hash, increases the value (count) by 1
-            $plus_ends{$chr_end_coord} = $plus_ends{$chr_end_coord} + $split_id[1];	
-        }
-        else {
-            $plus_ends{$chr_end_coord} = $split_id[1]; #if the key is not already in the hash, adds it with a value (count) of the read depth
-        }
+        $plus_ends{$chr_end_coord} = $split_id[1]; #if the key is not already in the hash, adds it with a value (count) of the read depth
     }
 }
 
-foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted bedgraph file
+foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted temporary bedgraph file
     my @split_keys = split("\:", $chr_end_coord); 
-    print OUT3 "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t$plus_ends{$chr_end_coord}\n";
+    print OUT "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t$plus_ends{$chr_end_coord}\n";
 }	
 close(INF);
-close(OUT1);
-close(OUT2);
-close(OUT3);
+close(OUT);
 
-system("rm \Q$SMRT_file\E.sorted.plus.sam.soft_clipped_reads.sam.temp");
-system("rm \Q$SMRT_file\E.sorted.plus.sam.non_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
 
 #processing of MINUS sam file
 open(INF, "<$SMRT_file.sorted.minus.sam.temp") or die "couldn't open file";
-open(OUT1, ">$SMRT_file.sorted.minus.sam.soft_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT2, ">$SMRT_file.sorted.minus.sam.non_clipped_reads.sam.temp") or die "couldn't open file";
-open(OUT3, ">$SMRT_file.sorted.minus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
+open(OUT, ">$SMRT_file.sorted.minus.sam.read_ends.bedgraph.temp") or die "couldn't open file";
 
 my $previous_coordinate=1;
 my $count=0;
@@ -129,45 +112,34 @@ print "Processing SMRT minus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr;
-    if ($cols[5] =~ m/^\d+S/) { #removes reads clipped at the 3' end
-        print OUT1 $line, "\n";
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
+    next if ($cols[5] =~ m/^\d+S/); #skips reads soft-clipped at the 3' end
+    my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
+    if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
+        $count = $count + $split_id[1]; #increases the count by the read depth for the putative isoform		
     }
     else {
-        print OUT2 $line, "\n";
-        #uses Erik's counting method that should take less memory than the hash method, but only works for coordinates that can be obtained directly from the sorted sam file without having to calculate from the CIGAR string
-        my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
-        if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
-            $count = $count + $split_id[1]; #increases the count by the read depth for the putative isoform		
+        if ($previous_chr eq "start") { #doesn't print out the placeholder first line.
+            $previous_chr = $cols[2];	#sets the previous chromosome, previous coordinate and count values			
+            $previous_coordinate = $cols[3];				
+            $count = $split_id[1];
         }
         else {
-            if ($previous_chr eq "start") { #doesn't print out the placeholder first line.
-                
-                $previous_chr = $cols[2];	#sets the previous chromosome, previous coordinate and count values			
-                $previous_coordinate = $cols[3];				
-                $count = $split_id[1];
-            }
-            else {
-                print OUT3 $previous_chr, "\t", $previous_coordinate, "\t", $previous_coordinate, "\t-", $count, "\n"; #prints to output file
-                $previous_chr = $cols[2];				
-                $previous_coordinate = $cols[3];				
-                $count = $split_id[1];
-            }
+            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t-", $count, "\n"; #prints to output file, converting to 0-based bedgraph coordinates
+            $previous_chr = $cols[2];				
+            $previous_coordinate = $cols[3];				
+            $count = $split_id[1];
         }
     }
 }	
-print OUT3 $previous_chr, "\t", $previous_coordinate, "\t", $previous_coordinate, "\t-", $count, "\n"; #prints the last start coordinates to output file
+print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t-", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
-close(OUT1);
-close(OUT2);
-close(OUT3);
+close(OUT);
 
 system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.bedgraph.noheader");
 
 system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp");
-system("rm \Q$SMRT_file\E.sorted.minus.sam.soft_clipped_reads.sam.temp");
-system("rm \Q$SMRT_file\E.sorted.minus.sam.non_clipped_reads.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 
 #add header to bedgraph file
@@ -444,7 +416,6 @@ close(INF);
 
 #####----------COMPARING TO ANNOTATED ENDS-------------######
 open(INF, "<$ann_file" ) or die "couldn't open file";
-#open(OUT, ">$ann_file.ends_only.bed");
 
 print "Processing annotation file...\n";
 
@@ -476,14 +447,9 @@ while(my $line = <INF>) {
     }
 }
 
-#foreach (@annotated_ends){
-#    print OUT "$_\n";
-#}
-
 my $annotated = scalar @annotated_ends;
 
 close(INF);
-#close(OUT);
 
 #compare ends in the altered SMRT ends file (that already has info about Illumina ends) with annotated ends
 
@@ -531,11 +497,16 @@ my $total_found = $SMRT_annotated + $novel_found_by_SMRT_ill;
 
 print "------------------------------------------------\n";
 
-if ($SMRT_annotated != $annotated_found_by_SMRT) {
-    print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single SMRT end or vice versa.\n\n";
+if ($total_found > 0) {
+    if ($SMRT_annotated != $annotated_found_by_SMRT) {
+        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single SMRT end or vice versa.\n\n";
+    }
+    else {
+        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
+    }
 }
 else {
-    print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
+    print "No 3' ends validated\n";
 }
 
 close(INF);
