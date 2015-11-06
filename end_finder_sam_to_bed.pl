@@ -79,7 +79,7 @@ while (my $line = <INF>) {
             push (@dist, $1);
     }
     $sum += $_ for @dist;
-    my $end_coord = $cols[3] + $sum - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
+    my $end_coord = $cols[3] + $sum - 2; #subtract 1 to account for start/end inclusion and 1 to convert to 0-based bedgraph
     my $chr_end_coord = "$cols[2]\:$end_coord"; #combines the chromosome and 3' end coordinate into a key to use for the hash
     $sum = 0;
     @dist = ();
@@ -229,16 +229,17 @@ my @plus_ends;
 my @read_dist;
 
 while (my $line = <INF>) {
+    chomp($line);
 	my @cols = split("\t", $line);
-	if ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) {
+	if ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) { #minus strand
 		print OUT "$cols[2]\t$cols[3]\t0\n";
 	}
-	elsif ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) {
-		while ($cols[5] =~ /(\d+)[DMNX=]/g) {
+	elsif ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) { #plus strand
+		while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
             push (@read_dist, $1);
 		}
 		$cigar_sum += $_ for @read_dist;
-		$cigar_calc = $cols[3] + $cigar_sum - 1;
+		$cigar_calc = $cols[3] + $cigar_sum - 1; #subtract one to account for start/end inclusion
 		$cigar_sum = 0;
 		@read_dist = ();
 		print OUT "$cols[2]\t$cigar_calc\t1\n";
@@ -274,7 +275,7 @@ while (my $line = <INF>) {
 				$count_p++;
 			}
 			else {
-				$coordinate_p = $previous_coordinate_p - 1;
+				$coordinate_p = $previous_coordinate_p - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
 				print OUT "$chrom_plus\t$coordinate_p\t$coordinate_p\t$count_p\n";
 				$previous_coordinate_p = $cols[1];
 				$count_p = 1;
@@ -294,7 +295,7 @@ while (my $line = <INF>) {
 				$count_m++;
 			}
 			else {
-				$coordinate_m = $previous_coordinate_m - 1;
+				$coordinate_m = $previous_coordinate_m - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
 				print OUT "$chrom_minus\t$coordinate_m\t$coordinate_m\t-$count_m\n";
 				$chrom_minus = $cols[0];
 				$previous_coordinate_m = $cols[1];
