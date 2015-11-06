@@ -373,7 +373,7 @@ while(my $line = <INF> ) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @cols = split("\t", $line);
-	my $key_combo_ill = "$cols[0]:$cols[1]:$cols[2]:$cols[5]"; #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand
+	my $key_combo_ill = "$cols[1]:$cols[5]"; #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand
 	$features_ill{$key_combo_ill} = $cols[4]; #enters a count value for the key into the hash
 }
 
@@ -395,12 +395,12 @@ while(my $line = <INF>) {
         next if (abs $features_ill{$key_combo_ill} < $min_ill);
         my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
-        if (($SMRT_cols[5] eq $ill_cols[3]) and ($ill_cols[1] >= $lower_limit) and ($ill_cols[1] <= $upper_limit)) {
+        if (($SMRT_cols[5] eq $ill_cols[1]) and ($ill_cols[0] >= $lower_limit) and ($ill_cols[0] <= $upper_limit)) {
             my $name = "$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill";
             my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$ill_cols[1]\t$ill_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+            print OUT "$SMRT_cols[0]\t$ill_cols[0]\t$ill_cols[0]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
             $found_flag = 1;
-            $ill_coord = $ill_cols[1]; #allows the last call to be reported
+            $ill_coord = $ill_cols[0]; #allows the last call to be reported
             last; #if the SMRT end is supported by more than one Illumina polyA pileup, only one is reported
         }
     }
