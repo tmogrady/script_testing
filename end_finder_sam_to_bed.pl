@@ -20,37 +20,63 @@ print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to10795
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
-print "Enter desired window for collapsing SMRT 3' ends (e.g. 8): ";
-my $distance_between_SMRT_peaks = <STDIN>;
-chomp $distance_between_SMRT_peaks;
+my $distance_between_SMRT_peaks;
+my $min_As;
+my $min_softclip;
+my $distance_between_ill_peaks;
+my $dist_SMRT_ill;
+my $min_SMRT;
+my $min_ill;
+my $ann_dist;
 
-print "Enter minimum number of As for Illumina polyA tails (e.g. 5): ";
-my $min_As = <STDIN>;
-chomp $min_As;
+print "Use default parameters [y/n]? ";
+my $answer = <STDIN>;
+chomp $answer;
 
-print "Enter minimum number of mismatches for Illumina polyA tails (e.g. 2): ";
-my $min_softclip = <STDIN>;
-chomp $min_softclip;
+if ($answer eq "y") {
+    $distance_between_SMRT_peaks = 8;
+    $min_As = 5;
+    $min_softclip = 2;
+    $distance_between_ill_peaks = 8;
+    $dist_SMRT_ill = 8;
+    $min_SMRT = 5;
+    $min_ill = 1;
+    $ann_dist = 20;
+}
+else {
+    print "Enter desired window for collapsing SMRT 3' ends (e.g. 8): ";
+    $distance_between_SMRT_peaks = <STDIN>;
+    chomp $distance_between_SMRT_peaks;
+    
+    print "Enter minimum number of As for Illumina polyA tails (e.g. 5): ";
+    $min_As = <STDIN>;
+    chomp $min_As;
+    
+    print "Enter minimum number of mismatches for Illumina polyA tails (e.g. 2): ";
+    $min_softclip = <STDIN>;
+    chomp $min_softclip;
+    
+    print "Enter desired window for collapsing Illumina 3' ends (e.g. 8): ";
+    $distance_between_ill_peaks = <STDIN>;
+    chomp $distance_between_ill_peaks;
+    
+    print "Enter desired maximum allowable distance between SMRT and Illumina 3' ends (e.g. 8): ";
+    $dist_SMRT_ill = <STDIN>;
+    chomp $dist_SMRT_ill;
+    
+    print "Enter minimum number of SMRT reads to report a 3' end (e.g. 5): ";
+    $min_SMRT = <STDIN>;
+    chomp $min_SMRT;
+    
+    print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1): ";
+    $min_ill = <STDIN>;
+    chomp $min_ill;
+    
+    print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 20): ";
+    $ann_dist = <STDIN>;
+    chomp $ann_dist;
+}
 
-print "Enter desired window for collapsing Illumina 3' ends (e.g. 8): ";
-my $distance_between_ill_peaks = <STDIN>;
-chomp $distance_between_ill_peaks;
-
-print "Enter desired maximum allowable distance between SMRT and Illumina 3' ends (e.g. 8): ";
-my $dist_SMRT_ill = <STDIN>;
-chomp $dist_SMRT_ill;
-
-print "Enter minimum number of SMRT reads to report a 3' end (e.g. 5): ";
-my $min_SMRT = <STDIN>;
-chomp $min_SMRT;
-
-print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1): ";
-my $min_ill = <STDIN>;
-chomp $min_ill;
-
-print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 20): ";
-my $ann_dist = <STDIN>;
-chomp $ann_dist;
 
 print "------------------------------------------------\n";
 
