@@ -24,7 +24,8 @@ my $distance_between_SMRT_peaks;
 my $min_As;
 my $min_softclip;
 my $distance_between_ill_peaks;
-my $dist_SMRT_ill;
+my $dist_SMRT_ill_d;
+my $dist_SMRT_ill_u;
 my $min_SMRT;
 my $min_ill;
 my $ann_dist;
@@ -38,7 +39,8 @@ if ($answer eq "y") {
     $min_As = 5;
     $min_softclip = 2;
     $distance_between_ill_peaks = 8;
-    $dist_SMRT_ill = 8;
+    $dist_SMRT_ill_d = 10;
+    $dist_SMRT_ill_u = 4;
     $min_SMRT = 5;
     $min_ill = 1;
     $ann_dist = 20;
@@ -60,9 +62,13 @@ else {
     $distance_between_ill_peaks = <STDIN>;
     chomp $distance_between_ill_peaks;
     
-    print "Enter desired maximum allowable distance between SMRT and Illumina 3' ends (e.g. 8): ";
-    $dist_SMRT_ill = <STDIN>;
-    chomp $dist_SMRT_ill;
+    print "Enter number of bases downstream of SMRT ends to look for Illumina support (e.g. 10): ";
+    $dist_SMRT_ill_d = <STDIN>;
+    chomp $dist_SMRT_ill_d;
+    
+    print "Enter number of bases upstream of SMRT ends to look for Illumina support (e.g. 4): ";
+    $dist_SMRT_ill_u = <STDIN>;
+    chomp $dist_SMRT_ill_u;
     
     print "Enter minimum number of SMRT reads to report a 3' end (e.g. 5): ";
     $min_SMRT = <STDIN>;
@@ -392,7 +398,7 @@ system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
 
 open(INF, "<$ill_file.$viral_chr.polyA_sites.bed" ) or die "couldn't open file";
 
-print "Extracting SMRT 3' ends within $dist_SMRT_ill bases of Illumina polyA tails...\n";
+print "Extracting SMRT 3' ends with Illumina polyA tails within $dist_SMRT_ill_d bases downstream or $dist_SMRT_ill_u upstream...\n";
 
 my %features_ill;
 
@@ -411,6 +417,8 @@ open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp");
 
 my $ill_coord;
 my $match_count;
+my $lower_limit;
+my $upper_limit;
 
 while(my $line = <INF>) {
 	chomp($line);
@@ -421,9 +429,17 @@ while(my $line = <INF>) {
     foreach my $key_combo_ill (keys %features_ill) {
         my @ill_cols = split(":", $key_combo_ill);
         next if (abs $features_ill{$key_combo_ill} < $min_ill);
-        my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
-        my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
+        
+        if ($SMRT_cols[5] eq "+") { #sets boundaries for plus strand support
+            $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill_u;
+            $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill_d;
+        }
+        if ($SMRT_cols[5] eq "-") { #sets boundaries for minus strand support
+            $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill_d;
+            $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill_u;
+        }
         if (($SMRT_cols[5] eq $ill_cols[1]) and ($ill_cols[0] >= $lower_limit) and ($ill_cols[0] <= $upper_limit)) {
+            
             if ($match_count) {
                 if ($features_ill{$key_combo_ill} > $match_count){
                     $match_count = $features_ill{$key_combo_ill};
@@ -435,6 +451,7 @@ while(my $line = <INF>) {
                 $ill_coord = $ill_cols[0];
             }
         }
+        
     }
     if ($match_count) {
         my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
@@ -496,7 +513,7 @@ open(OUT, ">$SMRT_file.$viral_chr.validated_ends.bed");
 
 print "Comparing SMRT ends to annotated ends...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"consensus SMRT 3' ends of collapse value 8 supported by at least $min_SMRT reads within $dist_SMRT_ill bp of Illumina polyA sites of 5As, 2 mismatches, at least $min_ill reads, collapse window 8 or within $ann_dist of annotated ends. From end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT SMRT read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_ill = 0;
