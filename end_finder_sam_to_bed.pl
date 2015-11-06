@@ -383,6 +383,7 @@ open(INF, "<$SMRT_file.$viral_chr.ends.bed" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp");
 
 my $ill_coord;
+my $match_count;
 
 while(my $line = <INF>) {
 	chomp($line);
@@ -396,15 +397,25 @@ while(my $line = <INF>) {
         my $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill;
         my $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill;
         if (($SMRT_cols[5] eq $ill_cols[1]) and ($ill_cols[0] >= $lower_limit) and ($ill_cols[0] <= $upper_limit)) {
-            my $name = "$SMRT_cols[4]SMRT_$features_ill{$key_combo_ill}Ill";
-            my $count = $features_ill{$key_combo_ill} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$ill_cols[0]\t$ill_cols[0]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
-            $found_flag = 1;
-            $ill_coord = $ill_cols[0]; #allows the last call to be reported
-            last; #if the SMRT end is supported by more than one Illumina polyA pileup, only one is reported
+            if ($match_count) {
+                if ($features_ill{$key_combo_ill} > $match_count){
+                    $match_count = $features_ill{$key_combo_ill};
+                    $ill_coord = $ill_cols[0];
+                }
+            }
+            else {
+                $match_count = $features_ill{$key_combo_ill};
+                $ill_coord = $ill_cols[0];
+            }
         }
     }
-    if ($found_flag == 0) {
+    if ($match_count) {
+        my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
+        my $count = $match_count + $SMRT_cols[4];
+        print OUT "$SMRT_cols[0]\t$ill_coord\t$ill_coord\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        undef($match_count);
+    }
+    else {
         my @range_cols = split (":", $SMRT_cols[3]); #includes SMRT ends that are not supported by Illumina in this temporary file
         print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[1]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
