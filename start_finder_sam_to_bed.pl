@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes wiggle files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
+#Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
 
 #For now, accepts a Paraclu output file rather than a CAGE SAM file.
 
@@ -66,11 +66,10 @@ system("awk '\$2==16' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.minus.s
 system("rm \Q$SMRT_file\E.sorted.temp");
 
 #processing of PLUS SMRT sam file
-#uses Erik's counting method that should take less memory than the hash method, but only works for coordinates that can be obtained directly from the sorted sam file without having to calculate from the CIGAR string
 print "Processing SMRT plus strand reads...\n";
 
 open(INF, "<$SMRT_file.sorted.plus.sam.temp") or die "couldn't open file";
-open(OUT, ">$SMRT_file.sorted.plus.sam.read_starts.wig") or die "couldn't open file";
+open(OUT, ">$SMRT_file.sorted.plus.sam.read_starts.bedgraph") or die "couldn't open file";
 
 my $previous_coordinate=1;
 my $count=0;
@@ -79,27 +78,20 @@ my $previous_chr = "start";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
     my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
-   
-    if ($cols[2] eq $previous_chr && $cols[3] == $previous_coordinate) {
-        
+    if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
         $count = $count + $split_id[1]; #increases the count by the read depth for the putative isoform
     }
-
     else {
-        
         if ($previous_chr eq "start") { #doesn't print out the placeholder first line.
-            
             $previous_chr = $cols[2];	#sets the previous chromosome, previous coordinate and count values
             $previous_coordinate = $cols[3];
-            $count = $split_id[1]; #if the key is not already in the hash, adds it with a value (count) of the read depth
+            $count = $split_id[1];
         }
-        
         else {
-            
-            print OUT $previous_chr, "\t", $previous_coordinate, "\t", $previous_coordinate, "\t", $count, "\n"; #prints to output file
-            
+            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t", $count, "\n"; #prints to output file, converting to 0-based bedgraph coordinates
             $previous_chr = $cols[2];
             $previous_coordinate = $cols[3];
             $count = $split_id[1];
@@ -107,7 +99,7 @@ while (my $line = <INF>) {
     }
 }
 
-print OUT $previous_chr, "\t", $previous_coordinate, "\t", $previous_coordinate, "\t", $count, "\n"; #prints the last start coordinates to output file
+print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
 close(OUT);
 
@@ -115,75 +107,71 @@ system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
 
 #processing of MINUS SMRT sam file
 open(INF, "<$SMRT_file.sorted.minus.sam.temp") or die "couldn't open file";
-open(OUT, ">$SMRT_file.sorted.minus.sam.read_starts.wig.temp") or die "couldn't open file";
+open(OUT, ">$SMRT_file.sorted.minus.sam.read_starts.bedgraph.temp") or die "couldn't open file";
 
 my @dist;
 my $sum;
 my %minus_starts;
 
+print "Processing SMRT minus strand reads...\n";
+
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
-        
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
         push (@dist, $1);
     }
     $sum += $_ for @dist;
-    my $start_coord = $cols[3] + $sum -1;
-    
+    my $start_coord = $cols[3] + $sum - 2; #subtract 1 to account for start/end inclusion and 1 to convert to 0-based bedgraph
     my $chr_start_coord = "$cols[2]\:$start_coord"; #combines the chromosome and 5' end coordinate into a key to use for the hash
-    
     $sum = 0;
     @dist = ();
-    
     my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
-    
     if (exists $minus_starts{$chr_start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
         $minus_starts{$chr_start_coord} = $minus_starts{$chr_start_coord} + $split_id[1];
     }
-    
     else {
         $minus_starts{$chr_start_coord} = $split_id[1]; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative isoform
     }
 }
 
-foreach my $chr_start_coord (sort keys %minus_starts) { #prints out a(n inadequately) sorted wiggle file
+foreach my $chr_start_coord (sort keys %minus_starts) { #prints out a(n inadequately) sorted temporary bedgraph file
     my @split_keys = split("\:", $chr_start_coord);
     print OUT "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t-$minus_starts{$chr_start_coord}\n";
 }
 close(INF);
 close(OUT);
 
-system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.sorted.minus.sam.read_starts.wig.temp > \Q$SMRT_file\E.sorted.minus.sam.read_starts.wig");
+system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp > \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
 
-system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.wig \Q$SMRT_file\E.sorted.minus.sam.read_starts.wig.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.wig.noheader");
+system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.bedgraph.noheader");
 
-system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.wig.temp");
-system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.wig");
+system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp");
+system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
-system("rm \Q$SMRT_file\E.sorted.plus.sam.read_starts.wig");
+system("rm \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph");
 
-#add header to wiggle file
-open(INF, "<$SMRT_file.$viral_chr.all_read_starts.wig.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.all_read_starts.wig") or die "couldn't open file";
+#add header to bedgraph file
+open(INF, "<$SMRT_file.$viral_chr.all_read_starts.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.all_read_starts.bedgraph") or die "couldn't open file";
 
-print OUT "track type=wiggle name=\"$SMRT_file.$viral_chr.all_read_starts.wig\" description=\"5' starts of SMRT reads from start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedgraph name=\"$SMRT_file.$viral_chr.all_read_starts.bedgraph\" description=\"5' starts of SMRT reads from start_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
 close(OUT);
 close(INF);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.wig.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.bedgraph.noheader");
 
-#make a bed file from the SMRT wiggle file:
-open(INF, "<$SMRT_file.$viral_chr.all_read_starts.wig") or die "couldn't open file";
+#make a bed file from the SMRT bedgraph file:
+open(INF, "<$SMRT_file.$viral_chr.all_read_starts.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.starts.temp.bed") or die "couldn't open file";
 
 print "Combining SMRT 5' starts within $distance_between_SMRT_peaks of each other and calculating consensus 5' starts...\n";
-collapse_wiggle($distance_between_SMRT_peaks);
+collapse_bedgraph($distance_between_SMRT_peaks);
 
 close(INF);
 close(OUT);
@@ -442,7 +430,7 @@ close(OUT);
 system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
 
 #########################
-sub collapse_wiggle {
+sub collapse_bedgraph {
     my ($distance_between_peaks) = shift;
     my $prev_coord_plus = 1;
     my $prev_coord_minus = 1;
@@ -481,8 +469,8 @@ sub collapse_wiggle {
                     $first_plus = 0;
                 }
                 else {
-                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1; #calculates weighted average, subtracts 1 to make it 0-based for bed file
-                    $chrStart_plus = $coords_plus[0] - 1;
+                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus); #calculates weighted average, subtracts 1 to make it 0-based for bed file
+                    $chrStart_plus = $coords_plus[0];
                     $chrEnd_plus = pop(@coords_plus);
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_plus = ($cols[1]);
@@ -508,8 +496,8 @@ sub collapse_wiggle {
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1; #calculates weighted average
-                    $chrStart_minus = $coords_minus[0] - 1;
+                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus); #calculates weighted average
+                    $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_minus = ($cols[1]);
@@ -522,15 +510,15 @@ sub collapse_wiggle {
     }
     
     if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus) - 1;
-        $chrStart_plus = $coords_plus[0] - 1;
+        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus);
+        $chrStart_plus = $coords_plus[0];
         $chrEnd_plus = pop(@coords_plus);
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) - 1;
-        $chrStart_minus = $coords_minus[0] - 1;
+        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus);
+        $chrStart_minus = $coords_minus[0];
         $chrEnd_minus = pop(@coords_minus);
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
     }
