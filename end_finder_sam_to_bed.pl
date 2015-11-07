@@ -141,6 +141,7 @@ my $previous_coordinate=1;
 my $count=0;
 my $previous_chr = "start";
 print "Processing SMRT minus strand reads...\n";
+
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
@@ -163,7 +164,8 @@ while (my $line = <INF>) {
             $count = $split_id[1];
         }
     }
-}	
+}
+
 print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t-", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
 close(OUT);
