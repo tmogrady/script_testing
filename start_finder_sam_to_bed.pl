@@ -2,12 +2,7 @@
 
 #Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
 
-#For now, accepts a Paraclu output file rather than a CAGE SAM file.
-
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
-
-#to check: Are soft-clipped and non-softclipped read files generated unnecessarily?
-#       Add headers to all output files
 
 #USAGE:
 # perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
@@ -19,7 +14,7 @@ use strict;
 
 #die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
-my ($SMRT_file, $CAGE_file, $paraclu_prep_file, $ann_file) = @ARGV;
+my ($SMRT_file, $CAGE_file, $ann_file) = @ARGV;
 
 print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
 my $viral_chr = <STDIN>;
@@ -50,35 +45,35 @@ if ($answer eq "y") {
 }
 else {
     print "Enter desired window for collapsing SMRT 5' starts (e.g. 8): ";
-    my $distance_between_SMRT_peaks = <STDIN>;
+    $distance_between_SMRT_peaks = <STDIN>;
     chomp $distance_between_SMRT_peaks;
 
     print "Enter minimum tags per CAGE cluster: ";
-    my $min_tags = <STDIN>;
+    $min_tags = <STDIN>;
     chomp $min_tags;
 
     print "Enter minimum relative density for CAGE clusters: ";
-    my $min_dens = <STDIN>;
+    $min_dens = <STDIN>;
     chomp $min_dens;
 
     print "Enter minimum CAGE cluster length: ";
-    my $min_length = <STDIN>;
+    $min_length = <STDIN>;
     chomp $min_length;
 
     print "Enter maximum CAGE cluster length: ";
-    my $max_length = <STDIN>;
+    $max_length = <STDIN>;
     chomp $max_length;
 
     print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 8): ";
-    my $dist_SMRT_CAGE = <STDIN>;
+    $dist_SMRT_CAGE = <STDIN>;
     chomp $dist_SMRT_CAGE;
 
     print "Enter minimum number of SMRT reads to report a 5' start (e.g. 1): ";
-    my $min_SMRT = <STDIN>;
+    $min_SMRT = <STDIN>;
     chomp $min_SMRT;
 
     print "Enter maximum distance in bp from an annotated start to be called as 'annotated' (e.g. 20): ";
-    my $ann_dist = <STDIN>;
+    $ann_dist = <STDIN>;
     chomp $ann_dist;
 }
 
@@ -134,7 +129,7 @@ system("rm \Q$SMRT_file\E.sorted.plus.sam.temp");
 open(INF, "<$SMRT_file.sorted.minus.sam.temp") or die "couldn't open file";
 open(OUT, ">$SMRT_file.sorted.minus.sam.read_starts.bedgraph.temp") or die "couldn't open file";
 
-my @dist;
+my @CIGAR_dist;
 my $sum;
 my %minus_starts;
 
@@ -146,13 +141,13 @@ while (my $line = <INF>) {
     next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
-        push (@dist, $1);
+        push (@CIGAR_dist, $1);
     }
-    $sum += $_ for @dist;
+    $sum += $_ for @CIGAR_dist;
     my $start_coord = $cols[3] + $sum - 2; #subtract 1 to account for start/end inclusion and 1 to convert to 0-based bedgraph
     my $chr_start_coord = "$cols[2]\:$start_coord"; #combines the chromosome and 5' end coordinate into a key to use for the hash
     $sum = 0;
-    @dist = ();
+    @CIGAR_dist = ();
     my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
     if (exists $minus_starts{$chr_start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
         $minus_starts{$chr_start_coord} = $minus_starts{$chr_start_coord} + $split_id[1];
@@ -218,11 +213,267 @@ close(INF);
 system("rm \Q$SMRT_file\E.starts.bed.noheader");
 
 
-#####----------PROCESSING PARACLU OUTPUT-------------######
+#####----------PROCESSING CAGE DATA-------------######
 
-print "Extracting clusters from CAGE file (Containing $min_tags tags, density fold change at least $min_dens, from $min_length to $max_length bp long)\n";
+print "Preparing CAGE file...\n";
+
+system("sort -k 3,3 -k 4,4n \Q$CAGE_file\E > \Q$CAGE_file\E.sorted.temp");
+system("awk '\$2==0 \|\| \$2==81 \|\| \$2==83 \|\| \$2==89 \|\| \$2==137 \|\| \$2==161 \|\| \$2==163' \Q$CAGE_file\E.sorted.temp > \Q$CAGE_file\E.sorted.plus.sam.temp");
+system("awk '\$2==16 \|\| \$2==73 \|\| \$2==97 \|\| \$2==99 \|\| \$2==145 \|\| \$2==147 \|\| \$2==153' \Q$CAGE_file\E.sorted.temp > \Q$CAGE_file\E.sorted.minus.sam.temp");
+
+#processing of plus CAGE sam file
+
+open(INF, "<$CAGE_file.sorted.plus.sam.temp") or die "couldn't open file";
+open(OUT, ">$CAGE_file.read_starts.txt") or die "couldn't open file";
+
+my $prev_coord=1;
+my $start_count=0;
+my $prev_chr = "start";
+
+while (my $line = <INF>) {
+    chomp($line);
+    next if ($line =~ m/^@/); #skips header lines
+    my @cols = split("\t", $line);
+    
+    if (($cols[2] eq $prev_chr) and ($cols[3] == $prev_coord)) {
+        $start_count++; #increases the count by 1
+    }
+    
+    else {
+        if ($prev_chr eq "start") { #doesn't print out the placeholder first line.
+            $prev_chr = $cols[2];	#sets the previous chromosome, previous coordinate and count values
+            $prev_coord = $cols[3];
+            $start_count = 1;
+        }
+        
+        else {
+            print OUT $prev_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints to output file
+            $prev_chr = $cols[2];
+            $prev_coord = $cols[3];
+            $start_count = 1;
+        }
+    }
+}
+print OUT $prev_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints the last start coordinates to output file
+close(INF);
+#close(OUT);
+
+system("rm \Q$CAGE_file\E.sorted.plus.sam.temp");
+
+#processing of MINUS CAGE sam file
+
+open(INF, "<$CAGE_file.sorted.minus.sam.temp") or die "couldn't open file";
+
+my @read_dist;
+my $dist_sum;
+my %minus_start;
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    
+    while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
+        push (@read_dist, $1);
+    }
+    $dist_sum += $_ for @read_dist;
+    my $start_coord = $cols[3] + $dist_sum - 1;
+    
+    my $chr_start_coord = "$cols[2]\:$start_coord"; #combines the chromosome and 5' end coordinate into a key to use for the hash
+    
+    $dist_sum = 0;
+    @read_dist = ();
+    
+    if (exists $minus_start{$chr_start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
+        $minus_start{$chr_start_coord} = $minus_start{$chr_start_coord} + 1;
+    }
+    
+    else {
+        $minus_start{$chr_start_coord} = 1; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative isoform
+    }
+}
+
+foreach my $chr_start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file
+    my @split_keys = split("\:", $chr_start_coord);
+    print OUT "$split_keys[0]\t-\t$split_keys[1]\t$minus_start{$chr_start_coord}\n";
+}
+close(INF);
+close(OUT);
+
+system("rm \Q$CAGE_file\E.sorted.minus.sam.temp");
+system("rm \Q$CAGE_file\E.sorted.temp");
+
+open(INF, "<$CAGE_file.read_starts.txt") or die "couldn't open file";
+open(OUT, ">$CAGE_file.paraclu.txt.temp");
+
+# paraclu.pl: perform parametric clustering of data attached to sequences
+
+# Written by Martin C Frith 2006
+# Genome Exploration Research Group, RIKEN GSC and
+# Institute for Molecular Bioscience, University of Queensland
+
+# This program reads in a list of numeric values attached to positions
+# in sequences. The list should have four tab- (or space-) separated
+# columns containing: the sequence name, the strand, the position, and
+# the value. (Multiple values for the same sequence/strand/position
+# will be summed.) It outputs the clusters as eight tab-separated
+# columns: sequence name, strand, start, end, number of values, sum of
+# values, min d, max d. See below for the meaning of "d".
+
+# An example line of input:
+# chr1    +       17689   3
+# Clustering is performed separately for different strands (as if each
+# strand were a completely different sequence).  It does not matter
+# whether the position uses 0-based or 1-based coordinates: the
+# program does not care, and the output will be consistent with the
+# input.
+
+# The clusters are defined as follows. A cluster is a maximal scoring
+# segment, where the score of any segment is: the sum of the values in
+# the segment minus d times the size of the segment. Large values of d
+# give smaller, tighter clusters and small values of d give larger,
+# looser clusters. The program finds all possible clusters for any
+# value of d, and annotates each cluster with the maximum and minimum
+# values of d that produce it. The ratio max d / min d provides a
+# measure of the cluster's "stability".
+
+# The output will include two types of obvious/trivial/degenerate
+# clusters: those that cover single positions, and those that cover
+# all of the positions in a sequence.  For many purposes, it would be
+# best to ignore these cases.
+
+use strict;
+use List::Util qw(min max);
+
+my %data;
+
+#warn "reading...\n";
+
+while (<INF>) {
+    chomp;
+    s/#.*//;  # ignore comments
+    next unless /\S/;  # skip blank lines
+    
+    my ($seq, $strand, $pos, $value) = split;
+    my $key = "$seq $strand";
+    push @{$data{$key}}, [ $pos, $value ];
+}
+
+warn "Clustering CAGE data...\n";
+
+print OUT "# sequence, strand, start, end, sites, sum of values, min d, max d\n";
+
+for my $key (sort keys %data) {  # iterate over sequences / strands
+    my ($seq, $strand) = split " ", $key;
+    my $sites = $data{$key};
+    
+    @$sites = sort { $$a[0] <=> $$b[0] } @$sites;  # sort by position
+    
+    my $clusters = all_clusters($sites);
+    
+    for my $c (@$clusters) {
+        my ($beg, $end, $tot, $sit, $min, $max) = @$c;
+        my $beg_pos = $$sites[$beg][0];
+        my $end_pos = $$sites[$end][0];
+        printf OUT "$seq\t$strand\t$beg_pos\t$end_pos\t$sit\t$tot\t%.3g\t%.3g\n",
+        $min, $max;
+    }
+}
+
+### Generic code to find clusters in a sparse sequence of values: ###
+
+sub all_clusters {
+    our $inf = 1e100;  # hopefully much bigger than any value in the input
+    our $sites = shift;  # input: reference to array of site locations & values
+    our $clusters = [];  # output: reference to array of clusters
+    get_clusters(0, $#$sites, -$inf);
+    return $clusters;
+}
+
+# get clusters of sites between beg and end with density > min_density
+sub get_clusters {
+    our ($clusters, $inf);
+    my ($beg, $end, $min_density) = @_;
+    
+    my ($prefix, $pmin, $ptot, $psit) = weakest_prefix($beg, $end);
+    my ($suffix, $smin, $stot, $ssit) = weakest_suffix($beg, $end);
+    $ptot == $stot and $psit == $ssit or die "internal error!";
+    my $max_density = min $pmin, $smin;
+    
+    unless ($max_density == $inf) {
+        my $break = $pmin < $smin ? $prefix + 1 : $suffix;
+        my $new_min = max $min_density, $max_density;
+        get_clusters($beg, $break-1, $new_min);
+        get_clusters($break, $end, $new_min);
+    }
+    
+    push @$clusters, [ $beg, $end, $ptot, $psit, $min_density, $max_density ]
+	if $max_density > $min_density;
+}
+
+# get least dense prefix (and total of values & sites)
+sub weakest_prefix {
+    our ($sites, $inf);
+    my ($beg, $end) = @_;
+    
+    my $beg_pos = $$sites[$beg][0];
+    my $min_density = $inf;
+    my $min_prefix = $end;
+    my $tot = 0;
+    my $sit = 0;
+    
+    for (my $i = $beg; $i < $end; ++$i) {
+        $tot += $$sites[$i][1];
+        next if $$sites[$i][0] == $$sites[$i+1][0];  # idiot-proofing
+        ++$sit;
+        my $dist = $$sites[$i+1][0] - $beg_pos;
+        my $density = $tot / $dist;
+        if ($density < $min_density) {
+            $min_prefix = $i;
+            $min_density = $density;
+        }
+    }
+    
+    $tot += $$sites[$end][1];
+    ++$sit;
+    return ($min_prefix, $min_density, $tot, $sit);
+}
+
+# get least dense suffix (and total of values & sites)
+sub weakest_suffix {
+    our ($sites, $inf);
+    my ($beg, $end) = @_;
+    
+    my $end_pos = $$sites[$end][0];
+    my $min_density = $inf;
+    my $min_suffix = $beg;
+    my $tot = 0;
+    my $sit = 0;
+    
+    for (my $i = $end; $i > $beg; --$i) {
+        $tot += $$sites[$i][1];
+        next if $$sites[$i][0] == $$sites[$i-1][0];  # idiot-proofing
+        ++$sit;
+        my $dist = $end_pos - $$sites[$i-1][0];
+        my $density = $tot / $dist;
+        if ($density < $min_density) {
+            $min_suffix = $i;
+            $min_density = $density;
+        }
+    }
+    
+    $tot += $$sites[$beg][1];
+    ++$sit;
+    return ($min_suffix, $min_density, $tot, $sit);
+}
+
+close(INF);
+close(OUT);
+
+system("sort -k2,2 -k3,3n -k4,4rn \Q$CAGE_file\E.paraclu.txt.temp > \Q$CAGE_file\E.paraclu.txt");
+system("rm \Q$CAGE_file\E.paraclu.txt.temp");
 
 #filtering clusters:
+print "Extracting CAGE clusters containing $min_tags tags, density fold change at least $min_dens, from $min_length to $max_length bp long\n";
 
 my $length;
 my $dens;
@@ -231,7 +482,7 @@ my $prev_end = 0;
 my $chrStart;
 my $chrEnd;
 
-open(INF, "<$CAGE_file") or die "couldn't open file"; #for now, $CAGE_file is the output from Paraclu
+open(INF, "<$CAGE_file.paraclu.txt") or die "couldn't open file";
 open(OUT, ">$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
 
 while (my $line = <INF>) {
@@ -283,7 +534,7 @@ while (my $line = <INF>) {
     $chrEnd_CAGE = $cols[2];
     $strand_CAGE = $cols[5];
     #$tag_depth = 0;
-    open(INF2, "<$paraclu_prep_file") or die "couldn't open file";
+    open(INF2, "<$CAGE_file.read_starts.txt") or die "couldn't open file";
     while (my $line2 = <INF2>) { #is it a problem to be looping through 2 files at once? Should I slurp one into an array?
         chomp($line2);
         my @cols2 = split("\t", $line2);
@@ -300,9 +551,6 @@ while (my $line = <INF>) {
 
 close(INF);
 close(OUT);
-
-
-
 
 #####----------SEEKING CAGE SUPPORT FOR SMRT STARTS-------------######
 
