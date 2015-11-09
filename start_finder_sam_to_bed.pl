@@ -25,37 +25,62 @@ print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to10795
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
-print "Enter desired window for collapsing SMRT 5' starts (e.g. 8): ";
-my $distance_between_SMRT_peaks = <STDIN>;
-chomp $distance_between_SMRT_peaks;
+my $distance_between_SMRT_peaks;
+my $min_tags;
+my $min_dens;
+my $min_length;
+my $max_length;
+my $dist_SMRT_CAGE;
+my $min_SMRT;
+my $ann_dist;
 
-print "Enter minimum tags per CAGE cluster: ";
-my $min_tags = <STDIN>;
-chomp $min_tags;
+print "Use default parameters [y/n]? ";
+my $answer = <STDIN>;
+chomp $answer;
 
-print "Enter minimum relative density for CAGE clusters: ";
-my $min_dens = <STDIN>;
-chomp $min_dens;
+if ($answer eq "y") {
+    $distance_between_SMRT_peaks = 8;
+    $min_tags = 15;
+    $min_dens = 2;
+    $min_length = 1;
+    $max_length = 20;
+    $dist_SMRT_CAGE = 2;
+    $min_SMRT = 1;
+    $ann_dist = 20;
+}
+else {
+    print "Enter desired window for collapsing SMRT 5' starts (e.g. 8): ";
+    my $distance_between_SMRT_peaks = <STDIN>;
+    chomp $distance_between_SMRT_peaks;
 
-print "Enter minimum CAGE cluster length: ";
-my $min_length = <STDIN>;
-chomp $min_length;
+    print "Enter minimum tags per CAGE cluster: ";
+    my $min_tags = <STDIN>;
+    chomp $min_tags;
 
-print "Enter maximum CAGE cluster length: ";
-my $max_length = <STDIN>;
-chomp $max_length;
+    print "Enter minimum relative density for CAGE clusters: ";
+    my $min_dens = <STDIN>;
+    chomp $min_dens;
 
-print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 8): ";
-my $dist_SMRT_CAGE = <STDIN>;
-chomp $dist_SMRT_CAGE;
+    print "Enter minimum CAGE cluster length: ";
+    my $min_length = <STDIN>;
+    chomp $min_length;
 
-print "Enter minimum number of SMRT reads to report a 5' start (e.g. 1): ";
-my $min_SMRT = <STDIN>;
-chomp $min_SMRT;
+    print "Enter maximum CAGE cluster length: ";
+    my $max_length = <STDIN>;
+    chomp $max_length;
 
-print "Enter maximum distance in bp from an annotated start to be called as 'annotated' (e.g. 20): ";
-my $ann_dist = <STDIN>;
-chomp $ann_dist;
+    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 8): ";
+    my $dist_SMRT_CAGE = <STDIN>;
+    chomp $dist_SMRT_CAGE;
+
+    print "Enter minimum number of SMRT reads to report a 5' start (e.g. 1): ";
+    my $min_SMRT = <STDIN>;
+    chomp $min_SMRT;
+
+    print "Enter maximum distance in bp from an annotated start to be called as 'annotated' (e.g. 20): ";
+    my $ann_dist = <STDIN>;
+    chomp $ann_dist;
+}
 
 print "------------------------------------------------\n";
 
