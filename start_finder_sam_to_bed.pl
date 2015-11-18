@@ -86,14 +86,13 @@ system("awk '\$2==16' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.minus.s
 system("rm \Q$SMRT_file\E.sorted.temp");
 
 #processing of PLUS SMRT sam file
-print "Processing SMRT plus strand reads...\n";
-
 open(INF, "<$SMRT_file.sorted.plus.sam.temp") or die "couldn't open file";
 open(OUT, ">$SMRT_file.sorted.plus.sam.read_starts.bedgraph") or die "couldn't open file";
 
 my $previous_coordinate=1;
 my $count=0;
 my $previous_chr = "start";
+print "Processing SMRT plus strand reads...\n";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -111,7 +110,7 @@ while (my $line = <INF>) {
             $count = $split_id[1];
         }
         else {
-            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t", $count, "\n"; #prints to output file, converting to 0-based bedgraph coordinates
+            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate, "\t", $count, "\n"; #prints to output file, converting to chrStart 0-based bedgraph coordinate
             $previous_chr = $cols[2];
             $previous_coordinate = $cols[3];
             $count = $split_id[1];
@@ -119,7 +118,7 @@ while (my $line = <INF>) {
     }
 }
 
-print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t", $count, "\n"; #prints the last start coordinates to output file
+print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate, "\t", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
 close(OUT);
 
@@ -132,7 +131,6 @@ open(OUT, ">$SMRT_file.sorted.minus.sam.read_starts.bedgraph.temp") or die "coul
 my @CIGAR_dist;
 my $sum;
 my %minus_starts;
-
 print "Processing SMRT minus strand reads...\n";
 
 while (my $line = <INF>) {
@@ -144,7 +142,7 @@ while (my $line = <INF>) {
         push (@CIGAR_dist, $1);
     }
     $sum += $_ for @CIGAR_dist;
-    my $start_coord = $cols[3] + $sum - 2; #subtract 1 to account for start/end inclusion and 1 to convert to 0-based bedgraph
+    my $start_coord = $cols[3] + $sum - 1; #subtract 1 to account for start/end inclusion
     my $chr_start_coord = "$cols[2]\:$start_coord"; #combines the chromosome and 5' end coordinate into a key to use for the hash
     $sum = 0;
     @CIGAR_dist = ();
@@ -159,7 +157,7 @@ while (my $line = <INF>) {
 
 foreach my $chr_start_coord (sort keys %minus_starts) { #prints out a(n inadequately) sorted temporary bedgraph file
     my @split_keys = split("\:", $chr_start_coord);
-    print OUT "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t-$minus_starts{$chr_start_coord}\n";
+    print OUT $split_keys[0], "\t", $split_keys[1]-1, "\t", $split_keys[1], "\t-", $minus_starts{$chr_start_coord}, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 }
 close(INF);
 close(OUT);
@@ -234,7 +232,6 @@ while (my $line = <INF>) {
     chomp($line);
     next if ($line =~ m/^@/); #skips header lines
     my @cols = split("\t", $line);
-    
     if (($cols[2] eq $prev_chr) and ($cols[3] == $prev_coord)) {
         $start_count++; #increases the count by 1
     }
@@ -769,9 +766,9 @@ sub collapse_bedgraph {
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus); #calculates weighted average
-                    $chrStart_minus = $coords_minus[0];
-                    $chrEnd_minus = pop(@coords_minus);
+                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) + 1; #calculates weighted average. Adds one because this is the minus strand so this will be chrEnd in the bed file
+                    $chrStart_minus = $coords_minus[0] + 1;
+                    $chrEnd_minus = pop(@coords_minus) + 1;
                     printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_minus = ($cols[1]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
@@ -790,9 +787,9 @@ sub collapse_bedgraph {
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus);
-        $chrStart_minus = $coords_minus[0];
-        $chrEnd_minus = pop(@coords_minus);
+        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) + 1;
+        $chrStart_minus = $coords_minus[0] + 1;
+        $chrEnd_minus = pop(@coords_minus) + 1;
         printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
     }
 }
