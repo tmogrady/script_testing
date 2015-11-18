@@ -292,11 +292,9 @@ open(OUT, ">$ill_file.polyA_sites.temp.bedgraph") or die "couldn't open file";
 my $chrom_minus;
 my $previous_coordinate_m=0;
 my $count_m=0;
-#my $coordinate_m;
 my $chrom_plus;
 my $previous_coordinate_p=0;
 my $count_p=0;
-#my $coordinate_p;
 
 while (my $line = <INF>) {
 	
@@ -309,7 +307,6 @@ while (my $line = <INF>) {
 				$count_p++;
 			}
 			else {
-				#$coordinate_p = $previous_coordinate_p - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
 				print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 				$previous_coordinate_p = $cols[1];
 				$count_p = 1;
@@ -329,7 +326,6 @@ while (my $line = <INF>) {
 				$count_m++;
 			}
 			else {
-				#$coordinate_m = $previous_coordinate_m - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
 				print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 				$chrom_minus = $cols[0];
 				$previous_coordinate_m = $cols[1];
@@ -344,9 +340,7 @@ while (my $line = <INF>) {
 	}
 }
 #prints to output file, converting chrStart to 0-based bedgraph coordinates
-#$coordinate_p = $previous_coordinate_p - 1;
 print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n";
-#$coordinate_m = $previous_coordinate_m - 1;
 print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n";
 
 close(INF);
@@ -614,7 +608,7 @@ sub collapse_bedgraph {
                     $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus); #calculates weighted average, subtracts 1 to make it 0-based for bed file
                     $chrStart_plus = $coords_plus[0];
                     $chrEnd_plus = pop(@coords_plus);
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
+                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus+1, $chrStart_plus+1, ":", $chrEnd_plus+1, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_plus = ($cols[1]);
                     $count_sum_plus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
                     $weighted_coordinate_sum_plus = $cols[1]*$cols[3];
@@ -641,7 +635,7 @@ sub collapse_bedgraph {
                     $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus); #calculates weighted average
                     $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
+                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus+1, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_minus = ($cols[1]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
                     $weighted_coordinate_sum_minus = $cols[1]*$cols[3];
@@ -655,7 +649,7 @@ sub collapse_bedgraph {
         $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus);
         $chrStart_plus = $coords_plus[0];
         $chrEnd_plus = pop(@coords_plus);
-        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
+        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus+1, $chrStart_plus+1, ":", $chrEnd_plus+1, ":", $count_sum_plus, $count_sum_plus, "+";
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
