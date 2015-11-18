@@ -127,7 +127,7 @@ while (my $line = <INF>) {
 foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted temporary bedgraph file
     my @split_keys = split("\:", $chr_end_coord);
     print OUT $split_keys[0], "\t", $split_keys[1]-1, "\t", $split_keys[1], "\t", $plus_ends{$chr_end_coord}, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
-}	
+}
 close(INF);
 close(OUT);
 
@@ -292,11 +292,11 @@ open(OUT, ">$ill_file.polyA_sites.temp.bedgraph") or die "couldn't open file";
 my $chrom_minus;
 my $previous_coordinate_m=0;
 my $count_m=0;
-my $coordinate_m;
+#my $coordinate_m;
 my $chrom_plus;
 my $previous_coordinate_p=0;
 my $count_p=0;
-my $coordinate_p;
+#my $coordinate_p;
 
 while (my $line = <INF>) {
 	
@@ -309,8 +309,8 @@ while (my $line = <INF>) {
 				$count_p++;
 			}
 			else {
-				$coordinate_p = $previous_coordinate_p - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
-				print OUT "$chrom_plus\t$coordinate_p\t$coordinate_p\t$count_p\n";
+				#$coordinate_p = $previous_coordinate_p - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
+				print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 				$previous_coordinate_p = $cols[1];
 				$count_p = 1;
 			}
@@ -329,8 +329,8 @@ while (my $line = <INF>) {
 				$count_m++;
 			}
 			else {
-				$coordinate_m = $previous_coordinate_m - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
-				print OUT "$chrom_minus\t$coordinate_m\t$coordinate_m\t-$count_m\n";
+				#$coordinate_m = $previous_coordinate_m - 1; #subtracts 1 to convert to 0-based bedgraph coordinate
+				print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 				$chrom_minus = $cols[0];
 				$previous_coordinate_m = $cols[1];
 				$count_m = 1;
@@ -343,11 +343,11 @@ while (my $line = <INF>) {
 		}
 	}
 }
-
-$coordinate_p = $previous_coordinate_p - 1;
-print OUT "$chrom_plus\t$coordinate_p\t$coordinate_p\t$count_p\n";
-$coordinate_m = $previous_coordinate_m - 1;
-print OUT "$chrom_minus\t$coordinate_m\t$coordinate_m\t-$count_m\n";
+#prints to output file, converting chrStart to 0-based bedgraph coordinates
+#$coordinate_p = $previous_coordinate_p - 1;
+print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n";
+#$coordinate_m = $previous_coordinate_m - 1;
+print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n";
 
 close(INF);
 close(OUT);
