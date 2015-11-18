@@ -299,6 +299,7 @@ while (my $line = <INF>) {
     chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
     my @cols = split("\t", $line);
+    next if $cols[0] ne $viral_chr; #skip lines that aren't viral
     my $intron_number = $cols[9] - 1;
     next if ($intron_number == 0);
     my @block_sizes = split(",", $cols[10]);
@@ -324,7 +325,7 @@ while (my $line = <INF>) {
     @intron_end = (); #intron starts and ends have been assigned to the %ann_intron_pair hash; empty them for the next transcript
 }
 
-my $ann_count;
+my $ann_count = 0;
 
 if (defined $ig_file) {
     open(INF, "<$ig_file");
