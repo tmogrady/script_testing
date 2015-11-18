@@ -69,7 +69,7 @@ while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     if ($cols[5] eq "+") { #plus and minus need to be treated separately in case of introns with the same starts and ends annotated on opposite strands
-        if ($cols[0] eq $plus_previous_chr && $cols[1] == $plus_previous_start && $cols[2] == $plus_previous_end) { #checks to see if the intron matches the previous intron
+        if (($cols[0] eq $plus_previous_chr) and ($cols[1] == $plus_previous_start) and ($cols[2] == $plus_previous_end)) { #checks to see if the intron matches the previous intron
             $plus_count = $plus_count + $cols[4];
         }
         else {
@@ -89,7 +89,7 @@ while (my $line = <INF>) {
         }
     }
     if ($cols[5] eq "-") {
-        if ($cols[0] eq $minus_previous_chr && $cols[1] == $minus_previous_start && $cols[2] == $minus_previous_end) {
+        if (($cols[0] eq $minus_previous_chr) and ($cols[1] == $minus_previous_start) and ($cols[2] == $minus_previous_end)) {
             $minus_count = $minus_count + $cols[4];
         }
         else {
@@ -367,9 +367,9 @@ print "Comparing SMRT junctions to annotation file...\n";
 
 print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.validated_introns.bed\" description=\"Introns detected by SMRT with read depth at least $min_SMRTj supported by Illumina-detected junctions with read depth at least $min_illj and/or annotation. From splice_junction_matcher.pl\"\n";
 
-my $val_SMRT_count;
-my $ann_SMRT_count;
-my $nov_SMRT_count;
+my $val_SMRT_count = 0;
+my $ann_SMRT_count = 0;
+my $nov_SMRT_count = 0;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -391,7 +391,12 @@ while (my $line = <INF>) {
 close(OUT);
 close(INF);
 
-print "$val_SMRT_count validated junctions detected in the SMRT file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
+if ($val_SMRT_count > 0) {
+    print "$val_SMRT_count validated junctions detected in the SMRT file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
+}
+else {
+    print "No validated junctions found.\n";
+}
 
 system ("rm \Q$SMRT_jfile\E.\Q$viral_chr\E.illumina_support.bed.temp");
 
