@@ -224,41 +224,37 @@ system("awk '\$2==16 \|\| \$2==73 \|\| \$2==97 \|\| \$2==99 \|\| \$2==145 \|\| \
 open(INF, "<$CAGE_file.sorted.plus.sam.temp") or die "couldn't open file";
 open(OUT, ">$CAGE_file.read_starts.txt") or die "couldn't open file";
 
-my $prev_coord=1;
+my $prev_coord=0.5;
 my $start_count=0;
-my $prev_chr = "start";
 
 while (my $line = <INF>) {
     chomp($line);
     next if ($line =~ m/^@/); #skips header lines
     my @cols = split("\t", $line);
-    if (($cols[2] eq $prev_chr) and ($cols[3] == $prev_coord)) {
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
+    if ($cols[3] == $prev_coord) {
         $start_count++; #increases the count by 1
     }
     
     else {
-        if ($prev_chr eq "start") { #doesn't print out the placeholder first line.
-            $prev_chr = $cols[2];	#sets the previous chromosome, previous coordinate and count values
+        if ($prev_coord == 0.5) { #doesn't print out the placeholder first line.
             $prev_coord = $cols[3];
             $start_count = 1;
         }
         
         else {
-            print OUT $prev_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints to output file
-            $prev_chr = $cols[2];
+            print OUT $viral_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints to output file
             $prev_coord = $cols[3];
             $start_count = 1;
         }
     }
 }
-print OUT $prev_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints the last start coordinates to output file
+print OUT "$viral_chr\t+\t$prev_coord\t$start_count\n"; #prints the last start coordinates to output file
 close(INF);
-#close(OUT);
 
 system("rm \Q$CAGE_file\E.sorted.plus.sam.temp");
 
 #processing of MINUS CAGE sam file
-
 open(INF, "<$CAGE_file.sorted.minus.sam.temp") or die "couldn't open file";
 
 my @read_dist;
@@ -273,31 +269,26 @@ while (my $line = <INF>) {
         push (@read_dist, $1);
     }
     $dist_sum += $_ for @read_dist;
-    my $start_coord = $cols[3] + $dist_sum - 1;
-    
-    my $chr_start_coord = "$cols[2]\:$start_coord"; #combines the chromosome and 5' end coordinate into a key to use for the hash
-    
+    my $start_coord = $cols[3] + $dist_sum - 1; #subtract one to account for start/end inclusion
     $dist_sum = 0;
     @read_dist = ();
-    
-    if (exists $minus_start{$chr_start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
-        $minus_start{$chr_start_coord} = $minus_start{$chr_start_coord} + 1;
+    if (exists $minus_start{$start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
+        $minus_start{$start_coord} = $minus_start{$start_coord} + 1;
     }
-    
     else {
-        $minus_start{$chr_start_coord} = 1; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative isoform
+        $minus_start{$start_coord} = 1; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative isoform
     }
 }
-
-foreach my $chr_start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file
-    my @split_keys = split("\:", $chr_start_coord);
-    print OUT "$split_keys[0]\t-\t$split_keys[1]\t$minus_start{$chr_start_coord}\n";
+foreach my $start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file
+    print OUT "$viral_chr\t-\t$start_coord\t$minus_start{$start_coord}\n";
 }
 close(INF);
 close(OUT);
 
 system("rm \Q$CAGE_file\E.sorted.minus.sam.temp");
 system("rm \Q$CAGE_file\E.sorted.temp");
+
+#Running Paraclu to define clusters
 
 open(INF, "<$CAGE_file.read_starts.txt") or die "couldn't open file";
 open(OUT, ">$CAGE_file.paraclu.txt.temp");
@@ -724,7 +715,7 @@ sub collapse_bedgraph {
         next if ($line =~ /^track/); #skips the track definition line
         my @cols = split("\t", $line);
         if ($cols[3] > 0) { #if this coordinate has a positive count...
-            if ($cols[1] < $prev_coord_plus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
+            if ($cols[1] <= $prev_coord_plus + ($distance_between_peaks)) { #if the coordinate is within the specified number of bp of the previous coordinate
                 $count_sum_plus = $count_sum_plus + $cols[3]; #adds to the sums to eventually calculate the weighted average
                 $weighted_coordinate_sum_plus = $weighted_coordinate_sum_plus + ($cols[1]*$cols[3]);
                 push (@coords_plus, $cols[1]);
@@ -739,10 +730,10 @@ sub collapse_bedgraph {
                     $first_plus = 0;
                 }
                 else {
-                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus); #calculates weighted average, subtracts 1 to make it 0-based for bed file
+                    $weighted_average_plus = sprintf("%1.0f", ($weighted_coordinate_sum_plus/$count_sum_plus)); #calculates weighted average
                     $chrStart_plus = $coords_plus[0];
                     $chrEnd_plus = pop(@coords_plus);
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
+                    print OUT $viral_chr, "\t", $weighted_average_plus, "\t", $weighted_average_plus+1,  "\t", $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, "\t", $count_sum_plus, "\t+\n"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
                     @coords_plus = ($cols[1]);
                     $count_sum_plus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
                     $weighted_coordinate_sum_plus = $cols[1]*$cols[3];
@@ -751,45 +742,46 @@ sub collapse_bedgraph {
             }
         }
         elsif ($cols[3] < 0) { #if this coordinate has a negative count...
-            if ($cols[1] < $prev_coord_minus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
+            if ($cols[2] <= $prev_coord_minus + ($distance_between_peaks)) { #if the coordinate is within the specified number of bp of the previous coordinate
                 $count_sum_minus = $count_sum_minus + $cols[3]; #adds to the sums to eventually calculate the weighted average
-                $weighted_coordinate_sum_minus = $weighted_coordinate_sum_minus + ($cols[1]*$cols[3]);
-                push (@coords_minus, $cols[1]);
-                $prev_coord_minus = $cols[1]; #sets the current coordinate as the "previous coordinate" before moving on
+                $weighted_coordinate_sum_minus = $weighted_coordinate_sum_minus + ($cols[2]*$cols[3]);
+                push (@coords_minus, $cols[2]);
+                $prev_coord_minus = $cols[2]; #sets the current coordinate as the "previous coordinate" before moving on
             }
             else { #if the present coordinate is not within the specified number of bp of the previous coordinate, need to print out a feature
                 if ($first_minus == 1) { #"first" flag avoids wonkiness if the first coordinate is far from coordinate 1 (don't need to print out a feature yet)
                     $count_sum_minus = $cols[3];
-                    $weighted_coordinate_sum_minus = $cols[1]*$cols[3];
-                    $prev_coord_minus = $cols[1];
-                    push (@coords_minus, $cols[1]);
+                    $weighted_coordinate_sum_minus = $cols[2]*$cols[3];
+                    $prev_coord_minus = $cols[2];
+                    push (@coords_minus, $cols[2]);
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) + 1; #calculates weighted average. Adds one because this is the minus strand so this will be chrEnd in the bed file
-                    $chrStart_minus = $coords_minus[0] + 1;
-                    $chrEnd_minus = pop(@coords_minus) + 1;
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
-                    @coords_minus = ($cols[1]);
+                    $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus)); #calculates weighted average.
+                    $chrStart_minus = $coords_minus[0];
+                    $chrEnd_minus = pop(@coords_minus);
+                    print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
+                    @coords_minus = ($cols[2]);
+                    @coords_minus = ($cols[2]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
-                    $weighted_coordinate_sum_minus = $cols[1]*$cols[3];
-                    $prev_coord_minus = $cols[1];
+                    $weighted_coordinate_sum_minus = $cols[2]*$cols[3];
+                    $prev_coord_minus = $cols[2];
                 }
             }
         }
     }
     
     if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus);
+        $weighted_average_plus = sprintf("%1.0f", ($weighted_coordinate_sum_plus/$count_sum_plus));
         $chrStart_plus = $coords_plus[0];
         $chrEnd_plus = pop(@coords_plus);
-        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus, $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, $count_sum_plus, "+";
+        print OUT $viral_chr, "\t", $weighted_average_plus, "\t", $weighted_average_plus+1,  "\t", $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, "\t", $count_sum_plus, "\t+\n"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus) + 1;
-        $chrStart_minus = $coords_minus[0] + 1;
-        $chrEnd_minus = pop(@coords_minus) + 1;
-        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
+        $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus));
+        $chrStart_minus = $coords_minus[0];
+        $chrEnd_minus = pop(@coords_minus);
+        print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
     }
 }
