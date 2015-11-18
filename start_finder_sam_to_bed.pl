@@ -279,7 +279,7 @@ while (my $line = <INF>) {
         $minus_start{$start_coord} = 1; #if the key is not already in the hash, adds it with a value (count) of the read depth for that putative isoform
     }
 }
-foreach my $start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file
+foreach my $start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file. Doesn't need to be sorted because Paraclu will do that anyways.
     print OUT "$viral_chr\t-\t$start_coord\t$minus_start{$start_coord}\n";
 }
 close(INF);
@@ -481,7 +481,7 @@ while (my $line = <INF>) {
     $length = $cols[3] - $cols[2] + 1;
     if (($length >= $min_length) and ($length <= $max_length)) {
         $dens = $cols[7] / $cols[6];
-        if ($dens >= $min_dens) {
+        if ($dens >= $min_dens) {   ####NEXT STEP: fix this to account for strand (minus strand starts should be shifted by one#####
             next if (($cols[2] >= $prev_start) and ($cols[2] <= $prev_end));
             $chrStart = $cols[2] - 1; #converts from 1-based (from SAM) to 0-based (for BED)
             $chrEnd = $cols[3] - 1; #converts from 1-based (from SAM) to 0-based (for BED)
