@@ -111,7 +111,7 @@ while (my $line = <INF>) {
             push (@dist, $1);
     }
     $sum += $_ for @dist;
-    my $end_coord = $cols[3] + $sum - 2; #subtract 1 to account for start/end inclusion and 1 to convert to 0-based bedgraph
+    my $end_coord = $cols[3] + $sum - 1; #subtract 1 to account for start/end inclusion
     my $chr_end_coord = "$cols[2]\:$end_coord"; #combines the chromosome and 3' end coordinate into a key to use for the hash
     $sum = 0;
     @dist = ();
@@ -125,8 +125,8 @@ while (my $line = <INF>) {
 }
 
 foreach my $chr_end_coord (sort keys %plus_ends) { #prints out a(n inadequately) sorted temporary bedgraph file
-    my @split_keys = split("\:", $chr_end_coord); 
-    print OUT "$split_keys[0]\t$split_keys[1]\t$split_keys[1]\t$plus_ends{$chr_end_coord}\n";
+    my @split_keys = split("\:", $chr_end_coord);
+    print OUT $split_keys[0], "\t", $split_keys[1]-1, "\t", $split_keys[1], "\t", $plus_ends{$chr_end_coord}, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
 }	
 close(INF);
 close(OUT);
@@ -158,7 +158,7 @@ while (my $line = <INF>) {
             $count = $split_id[1];
         }
         else {
-            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t-", $count, "\n"; #prints to output file, converting to 0-based bedgraph coordinates
+            print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate, "\t-", $count, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
             $previous_chr = $cols[2];				
             $previous_coordinate = $cols[3];				
             $count = $split_id[1];
@@ -166,7 +166,7 @@ while (my $line = <INF>) {
     }
 }
 
-print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate-1, "\t-", $count, "\n"; #prints the last start coordinates to output file
+print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinate, "\t-", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
 close(OUT);
 
