@@ -397,12 +397,18 @@ open(INF, "<$ill_file.$viral_chr.polyA_sites.bed" ) or die "couldn't open file";
 print "Extracting SMRT 3' ends with Illumina polyA tails within $dist_SMRT_ill_d bases downstream or $dist_SMRT_ill_u upstream...\n";
 
 my %features_ill;
+my $key_combo_ill;
 
 while(my $line = <INF> ) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @cols = split("\t", $line);
-	my $key_combo_ill = "$cols[1]:$cols[5]"; #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand
+    if ($cols[5] eq "+") { #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, coordinate and strand. Selects chrEnd for ends on the plus strand and chrStart for ends on the minus strand.
+        $key_combo_ill = "$cols[2]:$cols[5]";
+    }
+    if ($cols[5] eq "-") {
+        $key_combo_ill = "$cols[1]:$cols[5]";
+    }
 	$features_ill{$key_combo_ill} = $cols[4]; #enters a count value for the key into the hash
 }
 
@@ -421,14 +427,13 @@ while(my $line = <INF>) {
     next if ($line =~ /^track/); #skips the track definition line
 	my @SMRT_cols = split("\t", $line);
     next if (abs $SMRT_cols[4] < $min_SMRT);
-    my $found_flag=0;
     foreach my $key_combo_ill (keys %features_ill) {
         my @ill_cols = split(":", $key_combo_ill);
         next if (abs $features_ill{$key_combo_ill} < $min_ill);
         
         if ($SMRT_cols[5] eq "+") { #sets boundaries for plus strand support
-            $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill_u;
-            $upper_limit = $SMRT_cols[1]+$dist_SMRT_ill_d;
+            $lower_limit = $SMRT_cols[2]-$dist_SMRT_ill_u;
+            $upper_limit = $SMRT_cols[2]+$dist_SMRT_ill_d;
         }
         if ($SMRT_cols[5] eq "-") { #sets boundaries for minus strand support
             $lower_limit = $SMRT_cols[1]-$dist_SMRT_ill_d;
@@ -436,7 +441,7 @@ while(my $line = <INF>) {
         }
         if (($SMRT_cols[5] eq $ill_cols[1]) and ($ill_cols[0] >= $lower_limit) and ($ill_cols[0] <= $upper_limit)) {
             
-            if ($match_count) {
+            if ($match_count) { #if more than one Illumina end matches the SMRT end, selects Illumina end with the most reads
                 if ($features_ill{$key_combo_ill} > $match_count){
                     $match_count = $features_ill{$key_combo_ill};
                     $ill_coord = $ill_cols[0];
@@ -450,14 +455,22 @@ while(my $line = <INF>) {
         
     }
     if ($match_count) {
-        my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
-        my $count = $match_count + $SMRT_cols[4];
-        print OUT "$SMRT_cols[0]\t$ill_coord\t$ill_coord\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
-        undef($match_count);
+        if ($SMRT_cols[5] eq "+") {
+            my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
+            my $count = $match_count + $SMRT_cols[4];
+            print OUT $SMRT_cols[0], "\t", $ill_coord-1, "\t", $ill_coord, "\t", $name, "\t", $count, "\t", $SMRT_cols[5], "\t", $SMRT_cols[3], "\n"; #prints to output, adjusting chrStart to 0-based
+            undef($match_count);
+        }
+        if ($SMRT_cols[5] eq "-") {
+            my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
+            my $count = $match_count + $SMRT_cols[4];
+            print OUT $SMRT_cols[0], "\t", $ill_coord, "\t", $ill_coord+1, "\t", $name, "\t", $count, "\t", $SMRT_cols[5], "\t", $SMRT_cols[3], "\n"; #prints to output, adujsting chrEnd
+            undef($match_count);
+        }
     }
     else {
         my @range_cols = split (":", $SMRT_cols[3]); #includes SMRT ends that are not supported by Illumina in this temporary file
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[1]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
@@ -473,26 +486,23 @@ print "Processing annotation file...\n";
 #extract 3' ends from the annotation file:
 #annotation file must be sorted by chrStart then chrEnd!
 my @annotated_ends;
-my $plus_prev_chr = 0;
 my $plus_prev_coord = 0;
-my $minus_prev_chr = 0;
 my $minus_prev_coord = 0;
 
 while(my $line = <INF>) {
     chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @ann_cols = split("\t", $line);
+    next if $ann_cols[0] ne $viral_chr; #skip lines that aren't viral
     if ($ann_cols[5] eq "+") {
         if ($ann_cols[2] != $plus_prev_coord) {
-            push (@annotated_ends, "$ann_cols[0]:$ann_cols[2]:$ann_cols[3]:$ann_cols[5]");
-            $plus_prev_chr = $ann_cols[0];
+            push (@annotated_ends, "$ann_cols[2]:$ann_cols[5]"); #creates an array with chrEnd and strand
             $plus_prev_coord = $ann_cols[2];
         }
     }
     elsif ($ann_cols[5] eq "-"){
         if ($ann_cols[1] != $minus_prev_coord) {
-            push (@annotated_ends, "$ann_cols[0]:$ann_cols[1]:$ann_cols[3]:$ann_cols[5]");
-            $minus_prev_chr = $ann_cols[0];
+            push (@annotated_ends, "$ann_cols[1]:$ann_cols[5]"); #creates an array with chrStart and strand
             $minus_prev_coord = $ann_cols[1];
         }
     }
@@ -521,17 +531,32 @@ while(my $line = <INF>) {
     my $found_flag=0;
     foreach my $ann_end (@annotated_ends) {
         my @ann_cols = split(":", $ann_end);
-        my $lower_limit = $ann_cols[1]-$ann_dist;
-        my $upper_limit = $ann_cols[1]+$ann_dist;
-        if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
-            if ($found_flag == 0) {
-                print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
-                $found_flag = 1;
-                $annotated_found_by_SMRT++;
-                $SMRT_annotated++;
+        my $lower_limit = $ann_cols[0]-$ann_dist;
+        my $upper_limit = $ann_cols[0]+$ann_dist;
+        if ($ann_cols[1] eq "+") {
+            if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[2]>=$lower_limit) and ($SMRT_cols[2]<=$upper_limit)) {
+                if ($found_flag == 0) {
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    $found_flag = 1;
+                    $annotated_found_by_SMRT++;
+                    $SMRT_annotated++;
+                }
+                elsif ($found_flag == 1) {
+                    $annotated_found_by_SMRT++;
+                }
             }
-            elsif ($found_flag == 1) {
-                $annotated_found_by_SMRT++;
+        }
+        if ($ann_cols[1] eq "-") {
+            if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
+                if ($found_flag == 0) {
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    $found_flag = 1;
+                    $annotated_found_by_SMRT++;
+                    $SMRT_annotated++;
+                }
+                elsif ($found_flag == 1) {
+                    $annotated_found_by_SMRT++;
+                }
             }
         }
     }
@@ -568,8 +593,8 @@ system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp\E");
 #########################
 sub collapse_bedgraph {
     my ($distance_between_peaks) = shift;
-    my $prev_coord_plus = 1;
-    my $prev_coord_minus = 1;
+    my $prev_coord_plus = 0;
+    my $prev_coord_minus = 0;
     my $count_sum_plus = 0;
     my $count_sum_minus = 0;
     my $weighted_coordinate_sum_plus = 0;
@@ -590,34 +615,34 @@ sub collapse_bedgraph {
         next if ($line =~ /^track/); #skips the track definition line
         my @cols = split("\t", $line);
         if ($cols[3] > 0) { #if this coordinate has a positive count...
-            if ($cols[1] < $prev_coord_plus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
+            if ($cols[2] <= $prev_coord_plus + ($distance_between_peaks)) { #if the coordinate is within the specified number of bp of the previous coordinate
                 $count_sum_plus = $count_sum_plus + $cols[3]; #adds to the sums to eventually calculate the weighted average
-                $weighted_coordinate_sum_plus = $weighted_coordinate_sum_plus + ($cols[1]*$cols[3]);
-                push (@coords_plus, $cols[1]);
-                $prev_coord_plus = $cols[1]; #sets the current coordinate as the "previous coordinate" before moving on
+                $weighted_coordinate_sum_plus = $weighted_coordinate_sum_plus + ($cols[2]*$cols[3]);
+                push (@coords_plus, $cols[2]);
+                $prev_coord_plus = $cols[2]; #sets the current coordinate as the "previous coordinate" before moving on
             }
             else { #if the present coordinate is not within the specified number of bp of the previous coordinate, need to print out a feature
                 if ($first_plus == 1) { #"first" flag avoids wonkiness if the first coordinate is far from coordinate 1 (don't need to print out a feature yet)
                     $count_sum_plus = $cols[3];
-                    $weighted_coordinate_sum_plus = $cols[1]*$cols[3];
-                    $prev_coord_plus = $cols[1];
-                    push (@coords_plus, $cols[1]);
+                    $weighted_coordinate_sum_plus = $cols[2]*$cols[3];
+                    $prev_coord_plus = $cols[2];
+                    push (@coords_plus, $cols[2]);
                     $first_plus = 0;
                 }
                 else {
-                    $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus); #calculates weighted average, subtracts 1 to make it 0-based for bed file
+                    $weighted_average_plus = sprintf("%1.0f", ($weighted_coordinate_sum_plus/$count_sum_plus)); #calculates weighted average
                     $chrStart_plus = $coords_plus[0];
                     $chrEnd_plus = pop(@coords_plus);
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus+1, $chrStart_plus+1, ":", $chrEnd_plus+1, ":", $count_sum_plus, $count_sum_plus, "+"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
-                    @coords_plus = ($cols[1]);
+                    print OUT $viral_chr, "\t", $weighted_average_plus-1, "\t", $weighted_average_plus,  "\t", $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, "\t", $count_sum_plus, "\t+\n"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
+                    @coords_plus = ($cols[2]);
                     $count_sum_plus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
-                    $weighted_coordinate_sum_plus = $cols[1]*$cols[3];
-                    $prev_coord_plus = $cols[1];
+                    $weighted_coordinate_sum_plus = $cols[2]*$cols[3];
+                    $prev_coord_plus = $cols[2];
                 }
             }
         }
         elsif ($cols[3] < 0) { #if this coordinate has a negative count...
-            if ($cols[1] < $prev_coord_minus + ($distance_between_peaks+1)) { #if the coordinate is within the specified number of bp of the previous coordinate
+            if ($cols[1] <= $prev_coord_minus + ($distance_between_peaks)) { #if the coordinate is within the specified number of bp of the previous coordinate
                 $count_sum_minus = $count_sum_minus + $cols[3]; #adds to the sums to eventually calculate the weighted average
                 $weighted_coordinate_sum_minus = $weighted_coordinate_sum_minus + ($cols[1]*$cols[3]);
                 push (@coords_minus, $cols[1]);
@@ -632,10 +657,10 @@ sub collapse_bedgraph {
                     $first_minus = 0;
                 }
                 else {
-                    $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus); #calculates weighted average
+                    $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus)); #calculates weighted average
                     $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
-                    printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus+1, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-"; #prints out weighted average for plus strand features. Use printf to round the weighted average.
+                    print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
                     @coords_minus = ($cols[1]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
                     $weighted_coordinate_sum_minus = $cols[1]*$cols[3];
@@ -646,16 +671,16 @@ sub collapse_bedgraph {
     }
     
     if ($count_sum_plus > 0) {#calculates and prints out weighted average for the last feature (plus strand)
-        $weighted_average_plus = ($weighted_coordinate_sum_plus/$count_sum_plus);
+        $weighted_average_plus = sprintf("%1.0f", ($weighted_coordinate_sum_plus/$count_sum_plus));
         $chrStart_plus = $coords_plus[0];
         $chrEnd_plus = pop(@coords_plus);
-        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_plus, $weighted_average_plus+1, $chrStart_plus+1, ":", $chrEnd_plus+1, ":", $count_sum_plus, $count_sum_plus, "+";
+        print OUT $viral_chr, "\t", $weighted_average_plus-1, "\t", $weighted_average_plus, "\t", $chrStart_plus, ":", $chrEnd_plus, ":", $count_sum_plus, "\t", $count_sum_plus, "\t+\n";
     }
     
     if ($count_sum_minus < 0) {#calculates and prints out weighted average for the last feature (minus strand)
-        $weighted_average_minus = ($weighted_coordinate_sum_minus/$count_sum_minus);
+        $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus));
         $chrStart_minus = $coords_minus[0];
         $chrEnd_minus = pop(@coords_minus);
-        printf OUT "%s\t%1.0f\t%1.0f\t%d%s%d%s%d\t%d\t%s\n", $viral_chr, $weighted_average_minus, $weighted_average_minus, $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, $count_sum_minus, "-";
+        print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", $count_sum_minus, "\t-\n";
     }
 }
