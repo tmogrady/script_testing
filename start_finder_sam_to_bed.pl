@@ -264,7 +264,7 @@ my %minus_start;
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    
+    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
         push (@read_dist, $1);
     }
