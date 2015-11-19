@@ -648,7 +648,7 @@ open(OUT, ">$SMRT_file.$viral_chr.validated_starts.bed");
 
 print "Comparing SMRT starts to annotated starts...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT reads within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist of annotated starts. From start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_CAGE = 0;
