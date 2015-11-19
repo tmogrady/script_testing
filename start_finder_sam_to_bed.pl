@@ -536,17 +536,23 @@ close(OUT);
 
 #####----------SEEKING CAGE SUPPORT FOR SMRT STARTS-------------######
 
-#open(INF, "<$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed" ) or die "couldn't open file";
-open(INF, "<$CAGE_file.peaks_weighted_average.bed" ) or die "couldn't open file"; #change this back when you revert to outputting a single Paraclu bed file
+open(INF, "<$CAGE_file.peaks_weighted_average.bed" ) or die "couldn't open file";
 
 print "Extracting SMRT 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
 
 my %features_CAGE;
+my $key_combo_CAGE;
 
 while(my $line = <INF> ) {
 	chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
 	my @cols = split("\t", $line);
-	my $key_combo_CAGE = "$cols[0]:$cols[1]:$cols[2]:$cols[5]"; #for each line in the CAGE bed file, creates a key for the hash combining chromosome, start coordinate, end coordinate and strand. Doesn't really need $cols[2], does it?
+    if ($cols[5] eq "+") { #for each line in the CAGE bed file, creates a key for the hash combining coordinate and strand. Selects chrStart for starts on the plus strand and chrEnd for starts on the minus strand.
+        $key_combo_CAGE = "$cols[1]:$cols[5]";
+    }
+    if ($cols[5] eq "-") {
+        $key_combo_CAGE = "$cols[2]:$cols[5]";
+    }
 	$features_CAGE{$key_combo_CAGE} = $cols[4]; #enters a count value for the key into the hash
 }
 
@@ -555,27 +561,45 @@ close(INF);
 open(INF, "<$SMRT_file.$viral_chr.starts.bed" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed.temp");
 
+my $match_count;
+my $lower_limit;
+my $upper_limit;
+
 while(my $line = <INF>) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @SMRT_cols = split("\t", $line);
-    next if (abs $SMRT_cols[4] < $min_SMRT);
-    my $found_flag=0;
+    next if (abs $SMRT_cols[4] < $min_SMRT); #skips starts without enough SMRT support
     foreach my $key_combo_CAGE (keys %features_CAGE) {
         my @CAGE_cols = split(":", $key_combo_CAGE);
-        my $lower_limit = $SMRT_cols[1]-$dist_SMRT_CAGE;
-        my $upper_limit = $SMRT_cols[1]+$dist_SMRT_CAGE;
-        if (($SMRT_cols[5] eq $CAGE_cols[3]) and ($CAGE_cols[1] >= $lower_limit) and ($CAGE_cols[1] <= $upper_limit)) {
-            my $name = "$SMRT_cols[4]SMRT_$features_CAGE{$key_combo_CAGE}CAGE";
-            my $count = $features_CAGE{$key_combo_CAGE} + $SMRT_cols[4];
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
-            $found_flag = 1;
-            last; #if the SMRT start is supported by more than one CAGE cluster, only one is reported
+        if ($SMRT_cols[5] eq "+") {
+            $lower_limit = $SMRT_cols[1]-$dist_SMRT_CAGE;
+            $upper_limit = $SMRT_cols[1]+$dist_SMRT_CAGE;
+        }
+        if ($SMRT_cols[5] eq "-") {
+            $lower_limit = $SMRT_cols[2]-$dist_SMRT_CAGE;
+            $upper_limit = $SMRT_cols[2]+$dist_SMRT_CAGE;
+        }
+        if (($SMRT_cols[5] eq $CAGE_cols[1]) and ($CAGE_cols[0] >= $lower_limit) and ($CAGE_cols[0] <= $upper_limit)) {
+            if ($match_count) { #if more than one CAGE start matches the SMRT start, selects the CAGE end with the most tags
+                if ($features_CAGE{$key_combo_CAGE} > $match_count) {
+                    $match_count = $features_CAGE{$key_combo_CAGE};
+                }
+            }
+            else {
+                $match_count = $features_CAGE{$key_combo_CAGE};
+            }
         }
     }
-    if ($found_flag == 0) { #clean this up (just remove?) if you don't want to validate based on SMRT + ann without CAGE
+    if ($match_count) {
+        my $name = "$SMRT_cols[4].SMRT_$match_count.CAGE";
+        my $count = $match_count + $SMRT_cols[4];
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        undef($match_count);
+    }
+    else {
         my @range_cols = split (":", $SMRT_cols[3]);
-        #print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2].SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
@@ -585,46 +609,37 @@ close(INF);
 
 #####----------COMPARING TO ANNOTATED STARTS-------------######
 open(INF, "<$ann_file" ) or die "couldn't open file";
-#open(OUT, ">$ann_file.starts_only.bed");
 
 print "Processing annotation file...\n";
 
 #extract 5' starts from the annotation file:
 #annotation file must be sorted by chrStart then chrEnd!
 my @annotated_starts;
-my $plus_prev_chr = 0;
 my $plus_prev_coord = 0;
-my $minus_prev_chr = 0;
 my $minus_prev_coord = 0;
 
 while(my $line = <INF>) {
     chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @ann_cols = split("\t", $line);
+    next if $ann_cols[0] ne $viral_chr; #skip lines that aren't viral
     if ($ann_cols[5] eq "+") {
         if ($ann_cols[1] != $plus_prev_coord) {
-            push (@annotated_starts, "$ann_cols[0]:$ann_cols[1]:$ann_cols[3]:$ann_cols[5]");
-            $plus_prev_chr = $ann_cols[0];
+            push (@annotated_starts, "$ann_cols[1]:$ann_cols[5]");
             $plus_prev_coord = $ann_cols[1];
         }
     }
     elsif ($ann_cols[5] eq "-"){
         if ($ann_cols[2] != $minus_prev_coord) {
-            push (@annotated_starts, "$ann_cols[0]:$ann_cols[2]:$ann_cols[3]:$ann_cols[5]");
-            $minus_prev_chr = $ann_cols[0];
+            push (@annotated_starts, "$ann_cols[2]:$ann_cols[5]");
             $minus_prev_coord = $ann_cols[2];
         }
     }
 }
 
-#foreach (@annotated_starts){
-#    print OUT "$_\n";
-#}
-
 my $annotated = scalar @annotated_starts;
 
 close(INF);
-#close(OUT);
 
 #compare starts in the altered SMRT starts file (that already has info about CAGE starts) with annotated starts
 
@@ -645,19 +660,35 @@ while(my $line = <INF>) {
     my $found_flag=0;
     foreach my $ann_start (@annotated_starts) {
         my @ann_cols = split(":", $ann_start);
-        my $lower_limit = $ann_cols[1]-$ann_dist;
-        my $upper_limit = $ann_cols[1]+$ann_dist;
-        if (($SMRT_cols[5] eq $ann_cols[3]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
-            if ($found_flag == 0) {
-                print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
-                $found_flag = 1;
-                $annotated_found_by_SMRT++;
-                $SMRT_annotated++;
-            }
-            elsif ($found_flag == 1) {
-                $annotated_found_by_SMRT++;
+        my $lower_limit = $ann_cols[0]-$ann_dist;
+        my $upper_limit = $ann_cols[0]+$ann_dist;
+        if ($SMRT_cols[5] eq "+") {
+            if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
+                if ($found_flag == 0) {
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    $found_flag = 1;
+                    $annotated_found_by_SMRT++;
+                    $SMRT_annotated++;
+                }
+                elsif ($found_flag == 1) {
+                    $annotated_found_by_SMRT++;
+                }
             }
         }
+        if ($SMRT_cols[5] eq "-") {
+            if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[2]>=$lower_limit) and ($SMRT_cols[2]<=$upper_limit)) {
+                if ($found_flag == 0) {
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    $found_flag = 1;
+                    $annotated_found_by_SMRT++;
+                    $SMRT_annotated++;
+                }
+                elsif ($found_flag == 1) {
+                    $annotated_found_by_SMRT++;
+                }
+            }
+        }
+
     }
     if ($found_flag == 0) {
         if ($SMRT_cols[3] =~ /.+SMRT_.+CAGE/) {
@@ -666,7 +697,6 @@ while(my $line = <INF>) {
         }
     }
 }
-
 
 my $total_found = $SMRT_annotated + $novel_found_by_SMRT_CAGE;
 
