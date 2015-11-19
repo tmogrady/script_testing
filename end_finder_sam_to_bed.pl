@@ -99,7 +99,6 @@ open(OUT, ">$SMRT_file.sorted.plus.sam.read_ends.bedgraph.temp") or die "couldn'
 my @dist;
 my $sum;
 my %plus_ends;
-
 print "Processing SMRT plus strand reads...\n";
 
 while (my $line = <INF>) {
@@ -403,7 +402,7 @@ while(my $line = <INF> ) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
 	my @cols = split("\t", $line);
-    if ($cols[5] eq "+") { #for each line in the Illumina polyA reads bed file, creates a key for the hash combining chromosome, coordinate and strand. Selects chrEnd for ends on the plus strand and chrStart for ends on the minus strand.
+    if ($cols[5] eq "+") { #for each line in the Illumina polyA reads bed file, creates a key for the hash combining coordinate and strand. Selects chrEnd for ends on the plus strand and chrStart for ends on the minus strand.
         $key_combo_ill = "$cols[2]:$cols[5]";
     }
     if ($cols[5] eq "-") {
