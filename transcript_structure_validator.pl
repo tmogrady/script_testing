@@ -34,7 +34,7 @@ while (my $line = <INF>) {
 		foreach my $valid_start (@valid_start) { #checks to see if the 5' end of the (plus strand) SMRT transcript matches a range of possible start site values from the list of validated start sites
 			my @start_cols = split("\t", $valid_start);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
-			if (($strand eq $start_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
+			if (($chrom eq $start_cols[0]) and ($strand eq $start_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
 				$new_start_line = "$line\t$start_cols[1]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
 				print OUT $new_start_line, "\n"; #prints out a file of SMRT reads with validated 5' ends
@@ -46,7 +46,7 @@ while (my $line = <INF>) {
 		foreach my $valid_start (@valid_start) { #checks to see if the 5' end of the (minus strand) SMRT transcript matches a range of possible start site values from the list of validated start sites
 			my @start_cols = split("\t", $valid_start);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
-			if (($strand eq $start_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
+			if (($chrom eq $start_cols[0]) and ($strand eq $start_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
 				$new_start_line = "$line\t$start_cols[2]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
 				print OUT $new_start_line, "\n"; #prints out a file of SMRT reads with validated 5' ends
@@ -87,7 +87,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
 		foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated start sites
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
-            if (($strand eq $end_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
+            if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
                 $new_end_line = "$good_start\t$end_cols[2]";
                 push (@good_start_and_end, $new_end_line);
                 print OUT $new_end_line, "\n"; #prints out a file of SMRT reads with validated 5' and 3' ends
@@ -99,7 +99,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
         foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated start sites
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
-            if (($strand eq $end_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
+            if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
                 $new_end_line = "$chrom\t$chromStart\t$chromEnd\t$name\t$score\t$strand\t$thickStart\t$thickEnd\t$itemRgb\t$blockCount\t$blockSizes\t$blockStarts\t$end_cols[1]\t$new_coord";
                 push (@good_start_and_end, $new_end_line);
                 print OUT $new_end_line, "\n"; #prints out a file of SMRT reads with validated 5' and 3' ends
@@ -164,7 +164,8 @@ foreach my $good_start_and_end (@good_start_and_end) { #starts with the array of
 			my @coords = split(":", $intron_coord_pair); #allows extraction of the start and end coordinates from each intron in the SMRT transcript
 			foreach my $valid_intron (@valid_intron) { #goes through each intron in the array of validated introns
 				my @valid_coords = split("\t", $valid_intron); #allows extraction of the start and end coordinates from each validated intron
-				next if $intron_strand ne $valid_coords[5]; #enforces strand matching
+				next if $cols[0] ne $valid_coords[0]; #enforces chromosome matching
+                next if $intron_strand ne $valid_coords[5]; #enforces strand matching
 				if (($coords[0] == $valid_coords[1]) and ($coords[1] == $valid_coords[2])) {
 					push(@good_intron_counter, $intron_coord_pair);	#puts introns that are validated for this transcript into an array (this really just functions as a counter)
 				}			
