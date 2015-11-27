@@ -76,7 +76,6 @@ while (my $line = <INF>) {
 }
 print OUT $previous_chr, "\t+\t", $previous_coordinate, "\t", $count, "\n"; #prints the last start coordinates to output file
 close(INF);
-#close(OUT);
 
 system("rm \Q$file\E.sorted.plus.sam.temp");
 
@@ -123,10 +122,8 @@ foreach my $chr_start_coord (sort keys %minus_starts) { #prints out a(n inadequa
 close(INF);
 close(OUT);
 
-#system("sort -k 1,1 -k 3,3n \Q$file\E.sorted.minus.sam.read_starts.txt.temp > \Q$file\E.minus_read_starts.txt");
-#system("rm \Q$file\E.sorted.minus.sam.read_starts.txt.temp");
 system("rm \Q$file\E.sorted.minus.sam.temp");
-    system("rm \Q$file\E.sorted.temp");
+system("rm \Q$file\E.sorted.temp");
 
 open(INF, "<$file.read_starts.txt") or die "couldn't open file";
 open(OUT, ">$file.paraclu.txt.temp");
@@ -299,18 +296,15 @@ system("rm \Q$file\E.paraclu.txt.temp");
 
 #####----------PROCESSING PARACLU OUTPUT-------------######
 
-print "Extracting clusters from CAGE file (Containing $min_tags tags, density fold change at least $min_dens, from $min_length to $max_length bp long)\n";
-
 #filtering clusters:
+print "Extracting CAGE clusters containing $min_tags tags, density fold change at least $min_dens, from $min_length to $max_length bp long\n";
 
 my $length;
 my $dens;
 my $prev_start = 0;
 my $prev_end = 0;
-my $chrStart;
-my $chrEnd;
 
-open(INF, "<$file.paraclu.txt") or die "couldn't open file"; #for now, $CAGE_file is the output from Paraclu
+open(INF, "<$file.paraclu.txt") or die "couldn't open file";
 open(OUT, ">$file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
 
 while (my $line = <INF>) {
@@ -323,17 +317,11 @@ while (my $line = <INF>) {
         $dens = $cols[7] / $cols[6];
         if ($dens >= $min_dens) {
             next if (($cols[2] >= $prev_start) and ($cols[2] <= $prev_end));
-            $chrStart = $cols[2] - 1; #converts from 1-based (from SAM) to 0-based (for BED)
-            $chrEnd = $cols[3] - 1; #converts from 1-based (from SAM) to 0-based (for BED)
-            if ($dens < 100) {
-                printf OUT "%s\t%d\t%d\t%d%s%.1f\t%d\t%s\n", $cols[0], $chrStart, $chrEnd, $cols[5], ":", $dens, $cols[5], $cols[1];   #limits the density output to 1 decimal place, but doesn't change huge numbers to exponents
+            if ($dens < 100) { #keep everything one-based (like sam) for now; will convert to zero-based in next step
+                printf OUT "%s\t%d\t%d\t%d%s%.1f\t%d\t%s\n", $cols[0], $cols[2], $cols[3], $cols[5], ":", $dens, $cols[5], $cols[1];   #limits the density output to 1 decimal place, but doesn't change huge numbers to exponents
             }
-            #                elsif (($dens >= 100) and ($dens <= 10000)) {
-            #                    printf OUT "%s\t%d\t%d\t%d%s%d\t%d\t%s\n", $cols[0], $chrStart, $chrEnd, $cols[5], ":", $dens, $cols[5], $cols[1];
-            #                }
             else {
-                printf OUT "%s\t%d\t%d\t%d%s%.1e\t%d\t%s\n", $cols[0], $chrStart, $chrEnd, $cols[5], ":", $dens, $cols[5], $cols[1]; #changes large numbers to exponents
-                #print OUT "$cols[0]\t$cols[2]\t$cols[3]\t$cols[5]:$dens\t$cols[5]\t$cols[1]\n";
+                printf OUT "%s\t%d\t%d\t%d%s%.1e\t%d\t%s\n", $cols[0], $cols[2], $cols[3], $cols[5], ":", $dens, $cols[5], $cols[1]; #changes large numbers to exponents
             }
             $prev_start = $cols[2];
             $prev_end = $cols[3];
@@ -345,11 +333,10 @@ close(OUT);
 
 #getting weighted averages of Paraclu peaks:
 
-my $chrStart_CAGE;
-my $chrEnd_CAGE;
+my $rangeStart_CAGE;
+my $rangeEnd_CAGE;
 my $strand_CAGE;
 my $CAGE_weighted_sum = 0;
-#my $tag_depth = 0;
 my $CAGE_weighted_average;
 
 open(INF, "<$file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
@@ -358,21 +345,24 @@ open(OUT, ">$file.peaks_weighted_average.bed") or die "couldn't open file"; #lat
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    $chrStart_CAGE = $cols[1];
-    $chrEnd_CAGE = $cols[2];
+    $rangeStart_CAGE = $cols[1];
+    $rangeEnd_CAGE = $cols[2];
     $strand_CAGE = $cols[5];
-    #$tag_depth = 0;
     open(INF2, "<$file.read_starts.txt") or die "couldn't open file";
-    while (my $line2 = <INF2>) { #is it a problem to be looping through 2 files at once? Should I slurp one into an array?
+    while (my $line2 = <INF2>) {
         chomp($line2);
         my @cols2 = split("\t", $line2);
-        if ((($cols2[2]-1) >= $chrStart_CAGE) and (($cols2[2]-1) <= $chrEnd_CAGE) and ($cols2[1] eq $strand_CAGE)) {
+        if ((($cols2[2]) >= $rangeStart_CAGE) and (($cols2[2]) <= $rangeEnd_CAGE) and ($cols2[1] eq $strand_CAGE)) {
             $CAGE_weighted_sum = $CAGE_weighted_sum + ($cols2[2]*$cols2[3]);
-            #$tag_depth = $tag_depth + $cols2[3];
         }
     }
-    $CAGE_weighted_average = ($CAGE_weighted_sum/$cols[4]) - 1;
-    printf OUT "%s\t%1.0f\t%1.0f\t%s%s%s%s%s\t%s\t%s\n", $cols[0], $CAGE_weighted_average, $CAGE_weighted_average, $chrStart_CAGE, ":", $chrEnd_CAGE, ":", $cols[3], $cols[4], $cols[5];
+    $CAGE_weighted_average = sprintf("%1.0f", ($CAGE_weighted_sum/$cols[4]));
+    if ($strand_CAGE eq "+") {
+        print OUT $cols[0], "\t", $CAGE_weighted_average-1, "\t", $CAGE_weighted_average, "\t", $rangeStart_CAGE-1,  ":", $rangeEnd_CAGE-1, ":", $cols[3], "\t", $cols[4], "\t", $strand_CAGE, "\n"; #prints output, converting chrStart and range to 0-based
+    }
+    elsif ($strand_CAGE eq "-") {
+        print OUT $cols[0], "\t", $CAGE_weighted_average-1, "\t", $CAGE_weighted_average, "\t", $rangeStart_CAGE,  ":", $rangeEnd_CAGE, ":", $cols[3], "\t", $cols[4], "\t", $strand_CAGE, "\n"; #prints output, converting chrStart to 0-based but keeping range 1-based (because these are all chrEnds)
+    }
     $CAGE_weighted_sum = 0;
     close(INF2);
 }
