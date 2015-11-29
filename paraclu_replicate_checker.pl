@@ -10,7 +10,7 @@
 use warnings;
 use strict;
 
-my ($dist, $file1, $file2, $file3, $file4) = @ARGV;
+my ($dist, $chr, $file1, $file2, $file3, $file4) = @ARGV;
 my %peaks;
 
 open(INF, "<$file1");
@@ -24,6 +24,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
+    next if ($cols[0] ne $chr);
     if ($cols[5] eq "+") {
         $coord_key = "$cols[1]\:$cols[5]"; #creates a key for the hash with chrStart and strand
         $values = "$cols[4]\:$subcols[3]\:1"; #creates a value for the hash with tag count, relative density and replicate count
@@ -52,6 +53,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
+    next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -94,6 +96,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
+    next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -136,6 +139,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
+    next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -190,7 +194,7 @@ foreach my $hash_start (sort keys %peaks) {
         $chrStart = $chrEnd - 1;
     }
     my @hashcols = split("\:", $peaks{$hash_start});
-    my $out_line = "chrEBV(Akata_107955to171322_1to107954)\t$chrStart\t$chrEnd\t$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
+    my $out_line = "$chr\t$chrStart\t$chrEnd\t$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
     print OUT $out_line;
     if ($hashcols[2] > 1) {
         print OUT2 $out_line;
