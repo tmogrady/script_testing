@@ -182,26 +182,27 @@ my $chrEnd;
 foreach my $hash_start (sort keys %peaks) {
     my ($coord, $strand) = split("\:", $hash_start);
     if ($strand eq "+") {
-        $chrStart = $coord;
-        $chrEnd = $coord + 1;
+        $chrStart = sprintf("%1.0f", $coord);
+        $chrEnd = $chrStart + 1;
     }
     if ($strand eq "-") {
-        $chrStart = $coord - 1;
-        $chrEnd = $coord;
+        $chrEnd = sprintf("%1.0f", $coord);
+        $chrStart = $chrEnd - 1;
     }
     my @hashcols = split("\:", $peaks{$hash_start});
-    printf OUT "%s\t%1.0f\t%1.0f\t%s\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $chrStart, $chrEnd, $peaks{$hash_start}, $hashcols[0], $strand;
+    my $out_line = "chrEBV(Akata_107955to171322_1to107954)\t$chrStart\t$chrEnd\t$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
+    print OUT $out_line;
     if ($hashcols[2] > 1) {
-        printf OUT2 "%s\t%1.0f\t%1.0f\t%s\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $chrStart, $chrEnd, $peaks{$hash_start}, $hashcols[0], $strand;
+        print OUT2 $out_line;
     }
     if ($hashcols[2] > 2) {
-        printf OUT3 "%s\t%1.0f\t%1.0f\t%s\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $chrStart, $chrEnd, $peaks{$hash_start}, $hashcols[0], $strand;
+        print OUT3 $out_line;
     }
     if ($hashcols[2] > 3) {
-        printf OUT4 "%s\t%1.0f\t%1.0f\t%s\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $chrStart, $chrEnd, $peaks{$hash_start}, $hashcols[0], $strand;
+        print OUT4 $out_line;
     }
     if ($hashcols[2] > 4) {
-        printf OUT5 "%s\t%1.0f\t%1.0f\t%s\t%d\t%s\n", "chrEBV(Akata_107955to171322_1to107954)", $chrStart, $chrEnd, $peaks{$hash_start}, $hashcols[0], $strand;
+        print OUT5 $out_line;
     }
 }
 
