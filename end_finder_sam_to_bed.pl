@@ -43,7 +43,7 @@ if ($answer eq "y") {
     $dist_SMRT_ill_u = 4;
     $min_SMRT = 5;
     $min_ill = 1;
-    $ann_dist = 20;
+    $ann_dist = 25;
 }
 else {
     print "Enter desired window for collapsing SMRT 3' ends (e.g. 8): ";
