@@ -64,7 +64,7 @@ else {
     $max_length = <STDIN>;
     chomp $max_length;
 
-    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 8): ";
+    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 2): ";
     $dist_SMRT_CAGE = <STDIN>;
     chomp $dist_SMRT_CAGE;
 
