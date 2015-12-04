@@ -397,6 +397,8 @@ while (my $line = <INF>) {
     next if ($line =~ /^track/); #skips the track definition line
     my @val_cols = split("\t", $line);
     foreach my $ann (@ann) {
+        my $val_introns = 0;
+        my $ann_introns = 0;
         my @ann_cols = split("\t", $ann);
         next if ($val_cols[5] ne $ann_cols[5]);
         next if ($val_cols[9] ne $ann_cols[9]);
@@ -415,11 +417,40 @@ while (my $line = <INF>) {
         if (($val_cols[1] >= $lower_limit_s) and ($val_cols[1] <= $upper_limit_s)) {
             if (($val_cols[2] >= $lower_limit_e) and ($val_cols[2] <= $upper_limit_e)) {
                 if ($val_cols[9] == 1) {
-                    print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $val_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                    print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
                 }
-#                else {
-#                    
-#                }
+                else {
+                    my $val_intron_number = $val_cols[9] - 1;
+                    my @val_block_sizes = split(",", $val_cols[10]);
+                    my @val_block_starts = split(",", $val_cols[11]);
+                    for (my $i = 0; $i < $val_intron_number; $i = $i + 1) { #for the transcript currently in the "while" loop, creates an array of intron start sites relative to the genome
+                        $start = $val_cols[1] + $val_block_sizes[$i] + $val_block_starts[$i];
+                        $val_introns = "$val_introns:$start";
+                        #push(@intron_start, $start);
+                    }
+                    for (my $i2 = 1; $i2 < $val_cols[9]; $i2 = $i2 + 1) { #for the transcript currently in the "while" loop, creates an array of intron end sites relative to the genome
+                        $end = $val_cols[1] + $val_block_starts[$i2];
+                        $val_introns = "$val_introns:$end";
+                        #push(@intron_end, $end);
+                    }
+                    my $ann_intron_number = $ann_cols[9] - 1;
+                    my @ann_block_sizes = split(",", $ann_cols[10]);
+                    my @ann_block_starts = split(",", $ann_cols[11]);
+                    for (my $i = 0; $i < $ann_intron_number; $i = $i + 1) { #for the annotation currently in the "foreach" loop, creates an array of intron start sites relative to the genome
+                        $start = $ann_cols[1] + $ann_block_sizes[$i] + $ann_block_starts[$i];
+                        $ann_introns = "$ann_introns:$start";
+                        #push(@intron_start, $start);
+                    }
+                    for (my $i2 = 1; $i2 < $ann_cols[9]; $i2 = $i2 + 1) { #for the annotation currently in the "foreach" loop, creates an array of intron end sites relative to the genome
+                        $end = $ann_cols[1] + $ann_block_starts[$i2];
+                        $ann_introns = "$ann_introns:$end";
+                        #push(@intron_end, $end);
+                    }
+                    if ($val_introns eq $ann_introns) {
+                        print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                    }
+
+                }
             }
         }
     }
