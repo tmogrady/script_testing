@@ -5,7 +5,15 @@
 use warnings;
 use strict;
 
-my ($test_file, $valid_starts_file, $valid_ends_file, $valid_introns_file) = (@ARGV);
+my ($test_file, $valid_starts_file, $valid_ends_file, $valid_introns_file, $ann_file) = (@ARGV);
+
+print "Enter maximum distance from an annotated 5' start to be called annotated (e.g. 35): ";
+my $start_dist = <STDIN>;
+chomp $start_dist;
+
+print "Enter maximum distance from an annotated 3' end to be called annotated (e.g. 25): ";
+my $end_dist = <STDIN>;
+chomp $end_dist;
 
 #Create an array of validated start sites from the start sites input file:
 open(INF, "<$valid_starts_file") or die "couldn't open file";
@@ -361,9 +369,61 @@ if ($count_minus > 0) {#prints out the last feature (minus strand)
     print OUT "$prev_chr_minus\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_name_minus\t$count_minus\t\-\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_rgb_minus\t$prev_blocks_minus\t$prev_blockSizes_minus\t$prev_blockStarts_minus\n";
 }
 
-#print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]\t$count\t$cols[5]\t$cols[6]\t$cols[7]\t$cols[8]\t$cols[9]\t$cols[10]\t$cols[11]\n"; Need to print out last feature.
-
 close(INF);
 close(OUT);
 
 system("rm \Q$test_file\E.validated_corrected.temp");
+
+my @ann;
+
+open(INF, "<$ann_file") or die "couldn't open file";
+while (my $line = <INF>) {
+	chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
+	push (@ann, $line); #puts each line of the annotation file into an array to be checked later
+}
+close(OUT);
+
+open(INF, "<$test_file.isoforms.bed") or die "couldn't open file";
+open(OUT, ">$test_file.isoforms_with_annotation.bed");
+
+my $upper_limit_s;
+my $lower_limit_s;
+my $upper_limit_e;
+my $lower_limit_e;
+
+while (my $line = <INF>) {
+	chomp($line);
+    next if ($line =~ /^track/); #skips the track definition line
+    my @val_cols = split("\t", $line);
+    foreach my $ann (@ann) {
+        my @ann_cols = split("\t", $ann);
+        next if ($val_cols[5] ne $ann_cols[5]);
+        next if ($val_cols[9] ne $ann_cols[9]);
+        if ($val_cols[5] eq "+") {
+            $upper_limit_s = $ann_cols[1] + $start_dist;
+            $lower_limit_s = $ann_cols[1] - $start_dist;
+            $upper_limit_e = $ann_cols[2] + $end_dist;
+            $lower_limit_e = $ann_cols[2] - $end_dist;
+        }
+        if ($val_cols[5] eq "-") {
+            $upper_limit_s = $ann_cols[1] + $end_dist;
+            $lower_limit_s = $ann_cols[1] - $end_dist;
+            $upper_limit_e = $ann_cols[2] + $start_dist;
+            $lower_limit_e = $ann_cols[2] - $start_dist;
+        }
+        if (($val_cols[1] >= $lower_limit_s) and ($val_cols[1] <= $upper_limit_s)) {
+            if (($val_cols[2] >= $lower_limit_e) and ($val_cols[2] <= $upper_limit_e)) {
+                if ($val_cols[9] == 1) {
+                    print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $val_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                }
+#                else {
+#                    
+#                }
+            }
+        }
+    }
+}
+
+close(INF);
+close(OUT);
