@@ -182,19 +182,21 @@ open(OUT5, ">weird_replicates.temp");
 
 my $chrStart;
 my $chrEnd;
+my $out_line;
 
 foreach my $hash_start (sort keys %peaks) {
     my ($coord, $strand) = split("\:", $hash_start);
+    my @hashcols = split("\:", $peaks{$hash_start});
     if ($strand eq "+") {
         $chrStart = sprintf("%1.0f", $coord);
         $chrEnd = $chrStart + 1;
+        $out_line = "$chr\t$chrStart\t$chrEnd\t$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
     }
     if ($strand eq "-") {
         $chrEnd = sprintf("%1.0f", $coord);
         $chrStart = $chrEnd - 1;
+        $out_line = "$chr\t$chrStart\t$chrEnd\t-$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
     }
-    my @hashcols = split("\:", $peaks{$hash_start});
-    my $out_line = "$chr\t$chrStart\t$chrEnd\t$peaks{$hash_start}\t$hashcols[0]\t$strand\n";
     print OUT $out_line;
     if ($hashcols[2] > 1) {
         print OUT2 $out_line;
