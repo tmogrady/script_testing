@@ -27,6 +27,8 @@ my $cell_iso_length_sum = 0;
 my $cell_iso_number = 0;
 my $cell_read_length_sum = 0;
 my $cell_read_number = 0;
+my $min_mapped = 10000000000000000;
+my $max_mapped = 0;
 
 while (my $line = <INF>) {
 	chomp($line);
@@ -47,7 +49,13 @@ while (my $line = <INF>) {
 		$mapped_iso_length_sum = $mapped_iso_length_sum + $split_id[2];
 		$mapped_iso_number = $mapped_iso_number + 1;
 		$mapped_read_length_sum = $mapped_read_length_sum + ($split_id[1]*$split_id[2]);
-		$mapped_read_number = $mapped_read_number + $split_id[1];		
+		$mapped_read_number = $mapped_read_number + $split_id[1];
+        if ($split_id[2] < $min_mapped) {
+            $min_mapped = $split_id[2];
+        }
+        if ($split_id[2] > $max_mapped) {
+            $max_mapped = $split_id[2];
+        }
 		if ($cols[2] eq "chrEBV(Akata_107955to171322_1to107954)") {
 			$EBV_iso_length_sum = $EBV_iso_length_sum + $split_id[2];
 			$EBV_iso_number = $EBV_iso_number + 1;
@@ -140,6 +148,6 @@ else {
 	$cell_read_mean = $cell_read_length_sum/$cell_read_number;
 }
 
-print "Total number of isoforms\t$iso_number\tMean of total isoform lengths\t$iso_mean\nTotal number of reads\t$read_number\tMean of total read lengths\t$read_mean\nNumber of mapped isoforms\t$mapped_iso_number\tMean of mapped isoform lengths\t$mapped_iso_mean\nNumber of mapped reads\t$mapped_read_number\tMean of mapped read lengths\t$mapped_read_mean\nNumber of unmapped isoforms\t$un_iso_number\tMean of unmapped isoform lengths\t$un_iso_mean\nNumber of unmapped reads\t$un_read_number\tMean of unmapped read lengths\t$un_read_mean\nNumber of EBV isoforms\t$EBV_iso_number\tMean of EBV isoform lengths\t$EBV_iso_mean\nNumber of EBV reads\t$EBV_read_number\tMean of EBV read lengths\t$EBV_read_mean\nNumber of cellular isoforms\t$cell_iso_number\tMean of cellular isoform lengths: $cell_iso_mean\nNumber of cellular reads\t$cell_read_number\tMean of cellular read lengths: $cell_read_mean\n";	
+print "Total number of isoforms\t$iso_number\tMean of total isoform lengths\t$iso_mean\nTotal number of reads\t$read_number\tMean of total read lengths\t$read_mean\nNumber of mapped isoforms\t$mapped_iso_number\tMean of mapped isoform lengths\t$mapped_iso_mean\nNumber of mapped reads\t$mapped_read_number\tMean of mapped read lengths\t$mapped_read_mean\nNumber of unmapped isoforms\t$un_iso_number\tMean of unmapped isoform lengths\t$un_iso_mean\nNumber of unmapped reads\t$un_read_number\tMean of unmapped read lengths\t$un_read_mean\nNumber of EBV isoforms\t$EBV_iso_number\tMean of EBV isoform lengths\t$EBV_iso_mean\nNumber of EBV reads\t$EBV_read_number\tMean of EBV read lengths\t$EBV_read_mean\nNumber of cellular isoforms\t$cell_iso_number\tMean of cellular isoform lengths: $cell_iso_mean\nNumber of cellular reads\t$cell_read_number\tMean of cellular read lengths: $cell_read_mean\nShortest mapped length: $min_mapped\nLongest mapped length: $max_mapped\n";	
 	
 close(INF);
