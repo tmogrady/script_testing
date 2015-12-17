@@ -124,7 +124,7 @@ while (my $line = <INF>) {
             }
         }
     }
-    print OUT $cols[0], "\t", $cols[1], "\t", $cols[2], "\t", "$name$names{$name}_$cols[3]", "\t", $cols[4], "\t", $cols[5], "\t", $cols[6], "\t", $cols[7], "\t", $cols[8], "\t", $cols[9], "\t", $cols[10], "\t", $cols[11], "\n";
+    print OUT $cols[0], "\t", $cols[1], "\t", $cols[2], "\t", "$name$names{$name}", "\t1000\t", $cols[5], "\t", $cols[6], "\t", $cols[7], "\t", $cols[8], "\t", $cols[9], "\t", $cols[10], "\t", $cols[11], "\n";
 }
 close(INF);
 close(OUT);
