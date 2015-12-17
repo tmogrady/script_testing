@@ -93,7 +93,7 @@ while (my $line = <INF>) {
 close(INF);
 
 open(INF, "<$tran_file.sorted.temp") or die "couldn't open transcript file";
-open(OUT, ">${tran_file}_named_test.bed") or die "couldn't open output file";
+open(OUT, ">${tran_file}_named.bed") or die "couldn't open output file";
 
 while (my $line = <INF>) {
     chomp($line);
