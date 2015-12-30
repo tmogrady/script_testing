@@ -87,7 +87,7 @@ else {
 print "------------------------------------------------\n";
 
 #####----------SMRT FILE PROCESSING-------------######
-system("sort -k 3,3 -k 4,4n \Q$SMRT_file\E > \Q$SMRT_file\E.sorted.temp");
+system("awk '\$3==\"$viral_chr\"' \Q$SMRT_file\E \| sort -k 4,4n > \Q$SMRT_file\E.sorted.temp");
 system("awk '\$2==0' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.plus.sam.temp");
 system("awk '\$2==16' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.minus.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.temp");
@@ -104,7 +104,6 @@ print "Processing SMRT plus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 3' end
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
             push (@dist, $1);
@@ -144,7 +143,6 @@ print "Processing SMRT minus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/^\d+S/); #skips reads soft-clipped at the 3' end
     my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
     if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
@@ -548,7 +546,7 @@ while(my $line = <INF>) {
         if ($ann_cols[1] eq "-") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    print OUT $SMRT_cols[0], "\t", $SMRT_cols[1], "\t", $SMRT_cols[2], "\tann_${SMRT_cols[5]}_$SMRT_cols[3]\t", abs($SMRT_cols[4]), "\t", $SMRT_cols[5], "\t", $SMRT_cols[6], "\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -659,7 +657,7 @@ sub collapse_bedgraph {
                     $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus)); #calculates weighted average
                     $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
-                    print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
+                    print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", abs($count_sum_minus), "\t-\n";
                     @coords_minus = ($cols[1]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
                     $weighted_coordinate_sum_minus = $cols[1]*$cols[3];
@@ -680,6 +678,6 @@ sub collapse_bedgraph {
         $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus));
         $chrStart_minus = $coords_minus[0];
         $chrEnd_minus = pop(@coords_minus);
-        print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", $count_sum_minus, "\t-\n";
+        print OUT $viral_chr, "\t", $weighted_average_minus, "\t", $weighted_average_minus+1, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", abs($count_sum_minus), "\t-\n";
     }
 }
