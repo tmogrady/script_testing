@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
+#Accepts a SAM file using Iso-Seq fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
 
 #SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
 
@@ -12,7 +12,7 @@
 use warnings;
 use strict;
 
-#die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
 my ($SMRT_file, $CAGE_file, $ann_file) = @ARGV;
 
