@@ -469,7 +469,7 @@ my $prev_start = 0;
 my $prev_end = 0;
 
 open(INF, "<$CAGE_file.paraclu.txt") or die "couldn't open file";
-open(OUT, ">$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
+open(OUT, ">$CAGE_file.clusters.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -495,7 +495,7 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
-#getting weighted averages of Paraclu peaks:
+#getting weighted averages of Paraclu clusters:
 
 my $rangeStart_CAGE;
 my $rangeEnd_CAGE;
@@ -503,8 +503,8 @@ my $strand_CAGE;
 my $CAGE_weighted_sum = 0;
 my $CAGE_weighted_average;
 
-open(INF, "<$CAGE_file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
-open(OUT, ">$CAGE_file.peaks_weighted_average.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
+open(INF, "<$CAGE_file.clusters.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
+open(OUT, ">$CAGE_file.clusters_weighted_average.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
 
 while (my $line = <INF>) {
     chomp($line);
@@ -536,7 +536,7 @@ close(OUT);
 
 #####----------SEEKING CAGE SUPPORT FOR SMRT STARTS-------------######
 
-open(INF, "<$CAGE_file.peaks_weighted_average.bed" ) or die "couldn't open file";
+open(INF, "<$CAGE_file.clusters_weighted_average.bed" ) or die "couldn't open file";
 
 print "Extracting SMRT 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
 
