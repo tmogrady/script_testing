@@ -80,7 +80,7 @@ else {
 print "------------------------------------------------\n";
 
 #####----------SMRT FILE PROCESSING-------------######
-system("sort -k 3,3 -k 4,4n \Q$SMRT_file\E > \Q$SMRT_file\E.sorted.temp");
+system("awk '\$3==\"$viral_chr\"' \Q$SMRT_file\E \| sort -k 4,4n > \Q$SMRT_file\E.sorted.temp");
 system("awk '\$2==0' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.plus.sam.temp");
 system("awk '\$2==16' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.minus.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.temp");
@@ -97,7 +97,6 @@ print "Processing SMRT plus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
     my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
     if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
@@ -136,7 +135,6 @@ print "Processing SMRT minus strand reads...\n";
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
         push (@CIGAR_dist, $1);
@@ -216,7 +214,7 @@ system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph");
 
 print "Preparing CAGE file...\n";
 
-system("sort -k 3,3 -k 4,4n \Q$CAGE_file\E > \Q$CAGE_file\E.sorted.temp");
+system("awk '\$3==\"$viral_chr\"' \Q$CAGE_file\E \| sort -k 4,4n > \Q$CAGE_file\E.sorted.temp");
 system("awk '\$2==0 \|\| \$2==81 \|\| \$2==83 \|\| \$2==89 \|\| \$2==137 \|\| \$2==161 \|\| \$2==163' \Q$CAGE_file\E.sorted.temp > \Q$CAGE_file\E.sorted.plus.sam.temp");
 system("awk '\$2==16 \|\| \$2==73 \|\| \$2==97 \|\| \$2==99 \|\| \$2==145 \|\| \$2==147 \|\| \$2==153' \Q$CAGE_file\E.sorted.temp > \Q$CAGE_file\E.sorted.minus.sam.temp");
 
@@ -232,7 +230,6 @@ while (my $line = <INF>) {
     chomp($line);
     next if ($line =~ m/^@/); #skips header lines
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     if ($cols[3] == $prev_coord) {
         $start_count++; #increases the count by 1
     }
@@ -265,7 +262,6 @@ my %minus_start;
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    next if $cols[2] ne $viral_chr; #skips reads not mapped to the virus
     while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
         push (@read_dist, $1);
     }
