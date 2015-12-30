@@ -533,7 +533,7 @@ while(my $line = <INF>) {
         if ($ann_cols[1] eq "+") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[2]>=$lower_limit) and ($SMRT_cols[2]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -546,7 +546,7 @@ while(my $line = <INF>) {
         if ($ann_cols[1] eq "-") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT $SMRT_cols[0], "\t", $SMRT_cols[1], "\t", $SMRT_cols[2], "\tann_${SMRT_cols[5]}_$SMRT_cols[3]\t", abs($SMRT_cols[4]), "\t", $SMRT_cols[5], "\t", $SMRT_cols[6], "\n";
+                    print OUT $SMRT_cols[0], "\t", $SMRT_cols[1], "\t", $SMRT_cols[2], "\tann_", $SMRT_cols[5], "_", $SMRT_cols[3], "\t", abs($SMRT_cols[4]), "\t", $SMRT_cols[5], "\t", $SMRT_cols[6], "\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -559,7 +559,7 @@ while(my $line = <INF>) {
     }
     if ($found_flag == 0) {
         if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) {
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $novel_found_by_SMRT_ill++;
         }
     }
