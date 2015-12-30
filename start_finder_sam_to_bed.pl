@@ -164,7 +164,7 @@ close(OUT);
 
 system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp > \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
 
-system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.bedgraph.noheader");
+system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph.noheader");
 
 system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
@@ -172,20 +172,20 @@ system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 system("rm \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph");
 
 #add header to bedgraph file
-open(INF, "<$SMRT_file.$viral_chr.all_read_starts.bedgraph.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.all_read_starts.bedgraph") or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.read_starts.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.read_starts.bedgraph") or die "couldn't open file";
 
-print OUT "track type=bedgraph name=\"$SMRT_file.$viral_chr.all_read_starts.bedgraph\" description=\"5' starts of SMRT reads from start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedgraph name=\"$SMRT_file.$viral_chr.read_starts.bedgraph\" description=\"5' starts of SMRT reads from start_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
 close(OUT);
 close(INF);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.bedgraph.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph.noheader");
 
 #make a bed file from the SMRT bedgraph file:
-open(INF, "<$SMRT_file.$viral_chr.all_read_starts.bedgraph") or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.read_starts.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.starts.temp.bed") or die "couldn't open file";
 
 print "Combining SMRT 5' starts within $distance_between_SMRT_peaks of each other and calculating consensus 5' starts...\n";
@@ -199,9 +199,9 @@ system("rm \Q$SMRT_file.starts.temp.bed\E");
 
 #add header to bed file
 open(INF, "<$SMRT_file.starts.bed.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.starts.bed") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.SMRT_starts.bed") or die "couldn't open file";
 
-print OUT "track type=bed name=\"$SMRT_file.$viral_chr.starts.bed\" description=\"consensus 5' starts of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_starts.bed\" description=\"consensus 5' starts of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from start_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -209,6 +209,7 @@ close(OUT);
 close(INF);
 
 system("rm \Q$SMRT_file\E.starts.bed.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph");
 
 
 #####----------PROCESSING CAGE DATA-------------######
@@ -495,6 +496,8 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
+system("rm \Q$CAGE_file\E.paraclu.txt");
+
 #getting weighted averages of Paraclu clusters:
 
 my $rangeStart_CAGE;
@@ -504,7 +507,7 @@ my $CAGE_weighted_sum = 0;
 my $CAGE_weighted_average;
 
 open(INF, "<$CAGE_file.clusters.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
-open(OUT, ">$CAGE_file.clusters_weighted_average.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
+open(OUT, ">$CAGE_file.$viral_chr.CAGE_starts.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
 
 while (my $line = <INF>) {
     chomp($line);
@@ -534,9 +537,12 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
+system("rm \Q$CAGE_file\E.read_starts.txt");
+system("rm \Q$CAGE_file\E.clusters.$min_tags.$min_dens.$min_length.$max_length.bed");
+
 #####----------SEEKING CAGE SUPPORT FOR SMRT STARTS-------------######
 
-open(INF, "<$CAGE_file.clusters_weighted_average.bed" ) or die "couldn't open file";
+open(INF, "<$CAGE_file.$viral_chr.CAGE_starts.bed" ) or die "couldn't open file";
 
 print "Extracting SMRT 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
 
@@ -558,8 +564,8 @@ while(my $line = <INF> ) {
 
 close(INF);
 
-open(INF, "<$SMRT_file.$viral_chr.starts.bed" ) or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed.temp");
+open(INF, "<$SMRT_file.$viral_chr.SMRT_starts.bed" ) or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.SMRT_starts.bed.CAGE_support.bed.temp");
 
 my $match_count;
 my $lower_limit;
@@ -643,12 +649,12 @@ close(INF);
 
 #compare starts in the altered SMRT starts file (that already has info about CAGE starts) with annotated starts
 
-open(INF, "<$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed.temp" ) or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.SMRT_starts.bed.CAGE_support.bed.temp" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.validated_starts.bed");
 
 print "Comparing SMRT starts to annotated starts...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.starts.bed.CAGE_support.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.SMRT_starts.bed.CAGE_support.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_CAGE = 0;
@@ -712,7 +718,7 @@ else {
 close(INF);
 close(OUT);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.SMRT_starts.bed.CAGE_support.bed.temp");
 
 #########################
 sub collapse_bedgraph {
