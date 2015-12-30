@@ -472,7 +472,7 @@ my $prev_end = 0;
 open(INF, "<$CAGE_file.paraclu.txt") or die "couldn't open file";
 open(OUT, ">$CAGE_file.clusters.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
 
-while (my $line = <INF>) {
+while (my $line = <INF>) { #extracts clusters meeting the criteria. Excludes subclusters.
     chomp($line);
     next if ($line =~ /^#/); #skips the header line
     my @cols = split("\t", $line);
@@ -507,7 +507,7 @@ my $CAGE_weighted_sum = 0;
 my $CAGE_weighted_average;
 
 open(INF, "<$CAGE_file.clusters.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
-open(OUT, ">$CAGE_file.$viral_chr.CAGE_starts.bed") or die "couldn't open file"; #later, reduce output to just one file containing both the weighted average and the cluster extent
+open(OUT, ">$CAGE_file.$viral_chr.CAGE_starts.temp") or die "couldn't open file";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -537,6 +537,22 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
+system("sort -k2,2n -k 3,3n \Q$CAGE_file\E.\Q$viral_chr\E.CAGE_starts.temp > \Q$CAGE_file\E.\Q$viral_chr\E.CAGE_starts.noheader");
+system("rm \Q$CAGE_file\E.\Q$viral_chr\E.CAGE_starts.temp");
+
+#add header to bed file
+
+open(INF, "<$CAGE_file.$viral_chr.CAGE_starts.noheader") or die "couldn't open file";
+open(OUT, ">$CAGE_file.$viral_chr.CAGE_starts.bed");
+
+print OUT "track type=bed name=\"$CAGE_file.$viral_chr.CAGE_starts.bed\" description=\"weighted averages of CAGE clusters between $min_length and $max_length bases long with at least $min_tags tags and relative density of at least $min_dens from start_finder_sam_to_bed.pl and paraclu\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
+
+system("rm \Q$CAGE_file\E.\Q$viral_chr\E.CAGE_starts.noheader");
 system("rm \Q$CAGE_file\E.read_starts.txt");
 system("rm \Q$CAGE_file\E.clusters.$min_tags.$min_dens.$min_length.$max_length.bed");
 
