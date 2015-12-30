@@ -167,27 +167,27 @@ print OUT $previous_chr, "\t", $previous_coordinate-1, "\t", $previous_coordinat
 close(INF);
 close(OUT);
 
-system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.bedgraph.noheader");
+system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.read_ends.bedgraph.noheader");
 
 system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp");
 system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 
 #add header to bedgraph file
-open(INF, "<$SMRT_file.$viral_chr.all_read_ends.bedgraph.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.all_read_ends.bedgraph") or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.read_ends.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.read_ends.bedgraph") or die "couldn't open file";
 
-print OUT "track type=bedGraph name=\"$SMRT_file.$viral_chr.all_read_ends.bedgraph\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedGraph name=\"$SMRT_file.$viral_chr.read_ends.bedgraph\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
 close(OUT);
 close(INF);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.all_read_ends.bedgraph.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_ends.bedgraph.noheader");
 
 #make a bed file from the SMRT bedgraph file:
-open(INF, "<$SMRT_file.$viral_chr.all_read_ends.bedgraph") or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.read_ends.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.ends.temp.bed") or die "couldn't open file";
 
 print "Combining SMRT 3' ends within $distance_between_SMRT_peaks of each other and calculating consensus 3' ends...\n";
@@ -201,9 +201,9 @@ system("rm \Q$SMRT_file.ends.temp.bed\E");
 
 #add header to bed file
 open(INF, "<$SMRT_file.ends.bed.noheader") or die "couldn't open file";
-open(OUT, ">$SMRT_file.$viral_chr.ends.bed") or die "couldn't open file";
+open(OUT, ">$SMRT_file.$viral_chr.SMRT_ends.bed") or die "couldn't open file";
 
-print OUT "track type=bed name=\"$SMRT_file.$viral_chr.ends.bed\" description=\"consensus 3' ends of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_ends.bed\" description=\"consensus 3' ends of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -211,6 +211,7 @@ close(OUT);
 close(INF);
 
 system("rm \Q$SMRT_file\E.ends.bed.noheader");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_ends.bedgraph");
 
 #####----------ILLUMINA FILE PROCESSING-------------######
 
@@ -245,7 +246,7 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
-system ("sort -k 3,3 -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
+system ("sort -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
 system ("rm \Q$ill_file\E.polyA_ends.temp");
 
 open(INF, "<$ill_file.polyA_ends.sam") or die "couldn't open file";
@@ -386,6 +387,8 @@ close(OUT);
 close(INF);
 
 system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
+system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bedgraph");
+system("rm \Q$ill_file\E.polyA_ends.sam");
 
 #####----------SEEKING ILLUMINA SUPPORT FOR SMRT ENDS-------------######
 
@@ -411,7 +414,7 @@ while(my $line = <INF> ) {
 
 close(INF);
 
-open(INF, "<$SMRT_file.$viral_chr.ends.bed" ) or die "couldn't open file";
+open(INF, "<$SMRT_file.$viral_chr.SMRT_ends.bed" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp");
 
 my $ill_coord;
@@ -516,7 +519,7 @@ open(OUT, ">$SMRT_file.$viral_chr.validated_ends.bed");
 
 print "Comparing SMRT ends to annotated ends...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT SMRT read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.SMRT_ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT SMRT read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_ill = 0;
