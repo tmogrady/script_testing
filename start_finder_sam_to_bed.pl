@@ -666,7 +666,7 @@ open(OUT, ">$SMRT_file.$viral_chr.validated_starts.bed");
 
 print "Comparing SMRT starts to annotated starts...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.SMRT_starts.bed.CAGE_support.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.validated_starts.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_CAGE = 0;
@@ -683,7 +683,7 @@ while(my $line = <INF>) {
         if ($SMRT_cols[5] eq "+") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_${SMRT_cols[5]}_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -696,7 +696,7 @@ while(my $line = <INF>) {
         if ($SMRT_cols[5] eq "-") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[2]>=$lower_limit) and ($SMRT_cols[2]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT $SMRT_cols[0], "\t", $SMRT_cols[1], "\t", $SMRT_cols[2], "\t", "ann_${SMRT_cols[5]}_$SMRT_cols[3]\t", abs($SMRT_cols[4]), "\t", $SMRT_cols[5], "\t", $SMRT_cols[6], "\n";
+                    print OUT $SMRT_cols[0], "\t", $SMRT_cols[1], "\t", $SMRT_cols[2], "\tann_", $SMRT_cols[5], "_", $SMRT_cols[3], "\t", abs($SMRT_cols[4]), "\t", $SMRT_cols[5], "\t", $SMRT_cols[6], "\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -710,7 +710,7 @@ while(my $line = <INF>) {
     }
     if ($found_flag == 0) {
         if ($SMRT_cols[3] =~ /.+SMRT_.+CAGE/) {
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_${SMRT_cols[5]}_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $novel_found_by_SMRT_CAGE++;
         }
     }
