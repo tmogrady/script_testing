@@ -528,7 +528,7 @@ while (my $line = <INF>) {
         print OUT $cols[0], "\t", $CAGE_weighted_average-1, "\t", $CAGE_weighted_average, "\t", $rangeStart_CAGE-1,  ":", $rangeEnd_CAGE-1, ":", $cols[3], "\t", $cols[4], "\t", $strand_CAGE, "\n"; #prints output, converting chrStart and range to 0-based
     }
     elsif ($strand_CAGE eq "-") {
-        print OUT $cols[0], "\t", $CAGE_weighted_average-1, "\t", $CAGE_weighted_average, "\t", $rangeStart_CAGE,  ":", $rangeEnd_CAGE, ":", $cols[3], "\t", $cols[4], "\t", $strand_CAGE, "\n"; #prints output, converting chrStart to 0-based but keeping range 1-based (because these are all chrEnds)
+        print OUT $cols[0], "\t", $CAGE_weighted_average-1, "\t", $CAGE_weighted_average, "\t", $rangeStart_CAGE,  ":", $rangeEnd_CAGE, ":-", $cols[3], "\t", $cols[4], "\t", $strand_CAGE, "\n"; #prints output, converting chrStart to 0-based but keeping range 1-based (because these are all chrEnds)
     }
     $CAGE_weighted_sum = 0;
     close(INF2);
@@ -687,7 +687,7 @@ while(my $line = <INF>) {
         if ($SMRT_cols[5] eq "+") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[1]>=$lower_limit) and ($SMRT_cols[1]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_${SMRT_cols[5]}_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -700,7 +700,7 @@ while(my $line = <INF>) {
         if ($SMRT_cols[5] eq "-") {
             if (($SMRT_cols[5] eq $ann_cols[1]) and ($SMRT_cols[2]>=$lower_limit) and ($SMRT_cols[2]<=$upper_limit)) {
                 if ($found_flag == 0) {
-                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+                    print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_${SMRT_cols[5]}_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
                     $found_flag = 1;
                     $annotated_found_by_SMRT++;
                     $SMRT_annotated++;
@@ -714,7 +714,7 @@ while(my $line = <INF>) {
     }
     if ($found_flag == 0) {
         if ($SMRT_cols[3] =~ /.+SMRT_.+CAGE/) {
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_${SMRT_cols[5]}_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $novel_found_by_SMRT_CAGE++;
         }
     }
@@ -806,7 +806,7 @@ sub collapse_bedgraph {
                     $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus)); #calculates weighted average.
                     $chrStart_minus = $coords_minus[0];
                     $chrEnd_minus = pop(@coords_minus);
-                    print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
+                    print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", abs($count_sum_minus), "\t-\n";
                     @coords_minus = ($cols[2]);
                     @coords_minus = ($cols[2]);
                     $count_sum_minus = $cols[3]; #sets "previous coordinate", count and sum of counts for the current coordinate
@@ -828,6 +828,6 @@ sub collapse_bedgraph {
         $weighted_average_minus = sprintf("%1.0f", ($weighted_coordinate_sum_minus/$count_sum_minus));
         $chrStart_minus = $coords_minus[0];
         $chrEnd_minus = pop(@coords_minus);
-        print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t" ,$count_sum_minus, "\t-\n";
+        print OUT $viral_chr, "\t", $weighted_average_minus-1, "\t", $weighted_average_minus, "\t", $chrStart_minus, ":", $chrEnd_minus, ":", $count_sum_minus, "\t", abs($count_sum_minus), "\t-\n";
     }
 }
