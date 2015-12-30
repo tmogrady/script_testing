@@ -374,7 +374,7 @@ close(INF);
 close(OUT);
 
 system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
-system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.temp.bed\E");
+system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.temp.bed");
 
 #add header to bed file
 open(INF, "<$ill_file.$viral_chr.polyA_sites.bed.noheader") or die "couldn't open file";
@@ -587,7 +587,7 @@ else {
 close(INF);
 close(OUT);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp\E");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp");
 
 #########################
 sub collapse_bedgraph {
