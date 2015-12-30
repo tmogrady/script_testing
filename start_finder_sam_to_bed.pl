@@ -712,7 +712,7 @@ else {
 close(INF);
 close(OUT);
 
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp\E");
+system("rm \Q$SMRT_file\E.\Q$viral_chr\E.starts.bed.CAGE_support.bed.temp");
 
 #########################
 sub collapse_bedgraph {
