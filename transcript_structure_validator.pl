@@ -270,7 +270,7 @@ close(OUT);
 #system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start_and_end.bed.temp > \Q$test_file\E.valid_start_and_end.bed"); #uncomment to print out file of isoforms with validated starts and ends
 #system("rm \Q$test_file\E.valid_start_and_end.bed.temp"); #uncomment to print out file of isoforms with validated starts and ends
 
-system("sort -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed"); 
+system("sort -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed");
 system("rm \Q$test_file\E.validated_unrefined.bed.temp");
 
 open(INF, "<$test_file.validated_unrefined.bed");
@@ -334,6 +334,7 @@ close(INF);
 close(OUT);
 
 system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
+system("rm \Q$test_file\E.validated_refined.temp");
 
 open(INF, "<$test_file.validated_refined.bed");
 open(OUT, ">$test_file.isoforms.bed");
@@ -444,8 +445,6 @@ if ($count_minus > 0) {#prints out the last feature (minus strand)
 close(INF);
 close(OUT);
 
-system("rm \Q$test_file\E.validated_refined.temp");
-
 my @ann;
 
 open(INF, "<$ann_file") or die "couldn't open file";
@@ -529,3 +528,6 @@ while (my $line = <INF>) {
 
 close(INF);
 close(OUT);
+
+system("rm \Q$test_file\E.validated_refined.bed");
+system("rm \Q$test_file\E.validated_unrefined.bed");
