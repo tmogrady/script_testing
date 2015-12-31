@@ -5,6 +5,8 @@
 use warnings;
 use strict;
 
+die "USAGE: 'perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/validated_starts_file> </PATH/validated_ends_file> </PATH/validated_introns_file> </PATH/Annotation_bed_file>'" unless @ARGV == 5;
+
 my ($test_file, $valid_starts_file, $valid_ends_file, $valid_introns_file, $ann_file) = (@ARGV);
 
 print "Enter maximum distance from an annotated 5' start to be called annotated (e.g. 35): ";
@@ -103,6 +105,8 @@ close(INF);
 open(INF, "<$test_file.bed") or die "couldn't open file";
 #open(OUT, ">$test_file.valid_start.bed.temp"); #uncomment to print out file of isoforms with validated starts
 
+print "Checking start sites...\n";
+
 my @good_start;
 my $new_start_line;
 
@@ -138,10 +142,8 @@ while (my $line = <INF>) {
 
 my $good_start_number = scalar @good_start;
 
-print "Validated $good_start_number start sites.\n"; #have an array in memory of reads that have validated 5' ends, and their newly estimated 5' ends. Can uncomment lines to have an output a file of reads (in their original form) that have validated 5' ends.
-
 #close(OUT); #uncomment to print out file of isoforms with validated starts and ends
-close(INF);
+close(INF); #have an array in memory of reads that have validated 5' ends, and their newly estimated 5' ends. Can uncomment lines to have an output a file of reads (in their original form) that have validated 5' ends.
 
 #Create an array of validated end sites from the end sites input file:
 open(INF, "<$valid_ends_file") or die "couldn't open file";
@@ -157,6 +159,8 @@ while (my $line = <INF>) {
 close(INF);
 
 #open(OUT, ">$test_file.valid_start_and_end.bed.temp"); #uncomment to print out file of isoforms with validated starts and ends
+
+print "Checking end sites...\n";
 
 my @good_start_and_end;
 my $new_end_line;
@@ -191,8 +195,6 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
 
 my $good_start_end_number = scalar @good_start_and_end;
 
-print "Validated $good_start_end_number end sites.\n";
-
 #close(OUT); #uncomment to print out file of isoforms with validated starts and ends
 
 open(INF, "<$valid_introns_file") or die "couldn't open file";
@@ -208,6 +210,8 @@ while (my $line = <INF>) {
 close(INF);
 
 open(OUT, ">$test_file.validated_unrefined.bed.temp");
+
+print "Checking splice junctions...\n";
 
 my $start;
 my $end;
@@ -260,8 +264,6 @@ foreach my $good_start_and_end (@good_start_and_end) { #starts with the array of
 	}
 }
 
-print "Finished validating introns.\n";
-
 close(OUT);
 
 #system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start.bed.temp > \Q$test_file\E.valid_start.bed"); #uncomment to print out file of isoforms with validated starts
@@ -280,6 +282,7 @@ my $new_block_size;
 my @exon_start;
 my @exon_end;
 my @exon_coord_pair;
+my $validated_count = 0;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -288,6 +291,7 @@ while (my $line = <INF>) {
     if ($exon_number == 1) { #if a SMRT transcript has validated 5' and 3' ends and no introns, it is fully validated. Just adjust the start and end to the consensus sites and fix the BlockSize accordingly
         $new_block_size = $cols[13]-$cols[12];
 		print OUT "$cols[0]\t$cols[12]\t$cols[13]\t$cols[3]\t$cols[4]\t$cols[5]\t$cols[12]\t$cols[13]\t$cols[8]\t$cols[9]\t$new_block_size\t$cols[11]\n";
+        $validated_count++;
 	}
     else { #need to adjust the start and end sites and also the blockStarts and blockSizes
         my @block_sizes = split(",", $cols[10]);
@@ -325,6 +329,7 @@ while (my $line = <INF>) {
 		my $assembled_starts = join(",", 0, @new_starts);
 		my $assembled_sizes = join(",", @new_sizes);
 		print OUT "$cols[0]\t$cols[12]\t$cols[13]\t$cols[3]\t$cols[4]\t$cols[5]\t$cols[12]\t$cols[13]\t$cols[8]\t$cols[9]\t$assembled_sizes\t$assembled_starts\n";
+        $validated_count++;
     }
 }
 
@@ -336,10 +341,12 @@ close(OUT);
 system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
 system("rm \Q$test_file\E.validated_refined.temp");
 
+#Collapsing matching transcripts into single isoforms
+
 open(INF, "<$test_file.validated_refined.bed");
 open(OUT, ">$test_file.isoforms.bed");
 
-#To collapse transcripts with matching structures into isoforms. Need to deal with count for first line, make sure last feature prints out and separate plus and minus strands to deal with the slim possibility that antisense transcripts share the same coordinates.
+print "Collapsing matching transcripts into isoforms...\n";
 
 my $prev_chr_plus = "start";
 my $prev_chrStart_plus = 0;
@@ -359,6 +366,7 @@ my $prev_rgb_minus;
 my $prev_blocks_minus;
 my $prev_blockSizes_minus = "1,1";
 my $prev_blockStarts_minus = "0,0";
+my $iso_count = 0;
 
 while(my $line = <INF>) {
 	chomp($line);
@@ -386,6 +394,7 @@ while(my $line = <INF>) {
             }
             else {
                 print OUT "$prev_chr_plus\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_name_plus\t$count_plus\t\+\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_rgb_plus\t$prev_blocks_plus\t$prev_blockSizes_plus\t$prev_blockStarts_plus\n";
+                $iso_count++;
                 $prev_chrStart_plus = $cols[1];
                 $prev_chrEnd_plus = $cols[2];
                 $prev_blockSizes_plus = $cols[10];
@@ -421,6 +430,7 @@ while(my $line = <INF>) {
             }
             else {
                 print OUT "$prev_chr_minus\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_name_minus\t$count_minus\t\-\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_rgb_minus\t$prev_blocks_minus\t$prev_blockSizes_minus\t$prev_blockStarts_minus\n";
+                $iso_count++;
                 $prev_chrStart_minus = $cols[1];
                 $prev_chrEnd_minus = $cols[2];
                 $prev_blockSizes_minus = $cols[10];
@@ -436,10 +446,12 @@ while(my $line = <INF>) {
 }
 if ($count_plus > 0) {#prints out the last feature (plus strand)
     print OUT "$prev_chr_plus\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_name_plus\t$count_plus\t\+\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_rgb_plus\t$prev_blocks_plus\t$prev_blockSizes_plus\t$prev_blockStarts_plus\n";
+    $iso_count++;
 }
 
 if ($count_minus > 0) {#prints out the last feature (minus strand)
     print OUT "$prev_chr_minus\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_name_minus\t$count_minus\t\-\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_rgb_minus\t$prev_blocks_minus\t$prev_blockSizes_minus\t$prev_blockStarts_minus\n";
+    $iso_count++;
 }
 
 close(INF);
@@ -458,10 +470,13 @@ close(INF);
 open(INF, "<$test_file.isoforms.bed") or die "couldn't open file";
 open(OUT, ">$test_file.isoforms_with_annotation.bed");
 
+print "Checking for annotated isoforms...\n";
+
 my $upper_limit_s;
 my $lower_limit_s;
 my $upper_limit_e;
 my $lower_limit_e;
+my $ann_count = 0;
 
 while (my $line = <INF>) {
 	chomp($line);
@@ -490,6 +505,7 @@ while (my $line = <INF>) {
             if (($val_cols[2] >= $lower_limit_e) and ($val_cols[2] <= $upper_limit_e)) {
                 if ($val_cols[9] == 1) {
                     print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                    $ann_count++;
                     $found_flag=1;
                 }
                 else {
@@ -521,6 +537,7 @@ while (my $line = <INF>) {
                     }
                     if ($val_introns eq $ann_introns) {
                         print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                        $ann_count++;
                         $found_flag=1;
                     }
                 }
@@ -534,6 +551,11 @@ while (my $line = <INF>) {
 
 close(INF);
 close(OUT);
+
+print "------------------------------------------------\n$good_start_number sequences have validated start sites.\n";
+print "$good_start_end_number sequences have validated start and end sites.\n";
+print "$validated_count fully validated sequences collapse into $iso_count distinct isoforms.\n";
+print "$ann_count isoforms match annotated transcripts.\n";
 
 system("rm \Q$test_file\E.validated_refined.bed");
 system("rm \Q$test_file\E.validated_unrefined.bed");
