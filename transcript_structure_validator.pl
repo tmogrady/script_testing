@@ -478,6 +478,8 @@ my $upper_limit_e;
 my $lower_limit_e;
 my $ann_count = 0;
 
+print OUT "track type=bed name=\"$test_file.isoforms_with_annotation.bed\" description=\"validated transcript structures from transcript_structure_validator.pl\"\n";
+
 while (my $line = <INF>) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
