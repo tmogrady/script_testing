@@ -467,6 +467,7 @@ while (my $line = <INF>) {
 	chomp($line);
     next if ($line =~ /^track/); #skips the track definition line
     my @val_cols = split("\t", $line);
+    my $found_flag=0;
     foreach my $ann (@ann) {
         my $val_introns = 0;
         my $ann_introns = 0;
@@ -489,6 +490,7 @@ while (my $line = <INF>) {
             if (($val_cols[2] >= $lower_limit_e) and ($val_cols[2] <= $upper_limit_e)) {
                 if ($val_cols[9] == 1) {
                     print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                    $found_flag=1;
                 }
                 else {
                     my $val_intron_number = $val_cols[9] - 1;
@@ -519,10 +521,14 @@ while (my $line = <INF>) {
                     }
                     if ($val_introns eq $ann_introns) {
                         print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
+                        $found_flag=1;
                     }
                 }
             }
         }
+    }
+    if ($found_flag == 0){
+        print OUT $line, "\n";
     }
 }
 
@@ -531,3 +537,5 @@ close(OUT);
 
 system("rm \Q$test_file\E.validated_refined.bed");
 system("rm \Q$test_file\E.validated_unrefined.bed");
+system("rm \Q$test_file\E.isoforms.bed");
+system("rm \Q$test_file\E.bed");
