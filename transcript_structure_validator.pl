@@ -138,9 +138,9 @@ while (my $line = <INF>) {
 
 my $good_start_number = scalar @good_start;
 
-print "Validated $good_start_number start sites.\n"; #have an array in memory of reads that have validated 5' ends, and their newly estimated 5' ends. Can uncomment lines above to have an output a file of reads (in their original form) that have validated 5' ends.
+print "Validated $good_start_number start sites.\n"; #have an array in memory of reads that have validated 5' ends, and their newly estimated 5' ends. Can uncomment lines to have an output a file of reads (in their original form) that have validated 5' ends.
 
-close(OUT);
+#close(OUT); #uncomment to print out file of isoforms with validated starts and ends
 close(INF);
 
 #Create an array of validated end sites from the end sites input file:
@@ -156,7 +156,7 @@ while (my $line = <INF>) {
 
 close(INF);
 
-open(OUT, ">$test_file.valid_start_and_end.bed.temp");
+#open(OUT, ">$test_file.valid_start_and_end.bed.temp"); #uncomment to print out file of isoforms with validated starts and ends
 
 my @good_start_and_end;
 my $new_end_line;
@@ -170,7 +170,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
                 $new_end_line = "$good_start\t$end_cols[2]";
                 push (@good_start_and_end, $new_end_line);
-                print OUT $new_end_line, "\n"; #prints out a file of SMRT reads with validated 5' and 3' ends
+                #print OUT $new_end_line, "\n"; #uncomment to print out file of isoforms with validated starts and ends
                 last;
             }
         }
@@ -182,7 +182,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
                 $new_end_line = "$chrom\t$chromStart\t$chromEnd\t$name\t$score\t$strand\t$thickStart\t$thickEnd\t$itemRgb\t$blockCount\t$blockSizes\t$blockStarts\t$end_cols[1]\t$new_coord";
                 push (@good_start_and_end, $new_end_line);
-                print OUT $new_end_line, "\n"; #prints out a file of SMRT reads with validated 5' and 3' ends
+                #print OUT $new_end_line, "\n"; #uncomment to print out file of isoforms with validated starts and ends
                 last;
             }
         }
@@ -193,7 +193,7 @@ my $good_start_end_number = scalar @good_start_and_end;
 
 print "Validated $good_start_end_number end sites.\n";
 
-close(OUT);
+#close(OUT); #uncomment to print out file of isoforms with validated starts and ends
 
 open(INF, "<$valid_introns_file") or die "couldn't open file";
 
@@ -207,7 +207,7 @@ while (my $line = <INF>) {
 
 close(INF);
 
-open(OUT, ">$test_file.validated.bed.temp");
+open(OUT, ">$test_file.validated_unrefined.bed.temp");
 
 my $start;
 my $end;
@@ -267,14 +267,14 @@ close(OUT);
 #system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start.bed.temp > \Q$test_file\E.valid_start.bed"); #uncomment to print out file of isoforms with validated starts
 #system("rm \Q$test_file\E.valid_start.bed.temp"); #uncomment to print out file of isoforms with validated starts
 
-system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start_and_end.bed.temp > \Q$test_file\E.valid_start_and_end.bed");
-system("rm \Q$test_file\E.valid_start_and_end.bed.temp");
+#system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start_and_end.bed.temp > \Q$test_file\E.valid_start_and_end.bed"); #uncomment to print out file of isoforms with validated starts and ends
+#system("rm \Q$test_file\E.valid_start_and_end.bed.temp"); #uncomment to print out file of isoforms with validated starts and ends
 
-system("sort -k2,2n -k3,3n \Q$test_file\E.validated.bed.temp > \Q$test_file\E.validated.bed"); #This uniq command shouldn't be necessary: need to figure out why I'm getting duplicates (get as many duplicates as there are features in the valid_ends file, but things only match one)
-system("rm \Q$test_file\E.validated.bed.temp");
+system("sort -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed"); 
+system("rm \Q$test_file\E.validated_unrefined.bed.temp");
 
-open(INF, "<$test_file.validated.bed");
-open(OUT, ">$test_file.validated_corrected.temp");
+open(INF, "<$test_file.validated_unrefined.bed");
+open(OUT, ">$test_file.validated_refined.temp");
 
 my $new_block_size;
 my @exon_start;
@@ -333,9 +333,9 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
-system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_corrected.temp > \Q$test_file\E.validated_corrected.bed");
+system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
 
-open(INF, "<$test_file.validated_corrected.bed");
+open(INF, "<$test_file.validated_refined.bed");
 open(OUT, ">$test_file.isoforms.bed");
 
 #To collapse transcripts with matching structures into isoforms. Need to deal with count for first line, make sure last feature prints out and separate plus and minus strands to deal with the slim possibility that antisense transcripts share the same coordinates.
@@ -444,7 +444,7 @@ if ($count_minus > 0) {#prints out the last feature (minus strand)
 close(INF);
 close(OUT);
 
-system("rm \Q$test_file\E.validated_corrected.temp");
+system("rm \Q$test_file\E.validated_refined.temp");
 
 my @ann;
 
@@ -454,7 +454,7 @@ while (my $line = <INF>) {
     next if ($line =~ /^track/); #skips the track definition line
 	push (@ann, $line); #puts each line of the annotation file into an array to be checked later
 }
-close(OUT);
+close(INF);
 
 open(INF, "<$test_file.isoforms.bed") or die "couldn't open file";
 open(OUT, ">$test_file.isoforms_with_annotation.bed");
