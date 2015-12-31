@@ -1,5 +1,5 @@
 #!usr/bin/perl
-#Takes a bed file of PacBio SMRT isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
+#Takes a sam file of PacBio SMRT isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
 #TO'G 5/14/15
 
 use warnings;
@@ -15,6 +15,77 @@ print "Enter maximum distance from an annotated 3' end to be called annotated (e
 my $end_dist = <STDIN>;
 chomp $end_dist;
 
+#Convert SMRT sam file to bed:
+foreach my $file(@ARGV) {
+    open(INF, "<$test_file") or die "couldn't open input file";
+    open(OUT, ">$test_file.bed") or die "couldn't open output file";
+    
+    while (my $line = <INF>) {
+        $line =~ s/\r//g;
+        chomp($line);
+        next if ($line =~ m/\@/); #skips SAM header lines
+        my @split_line = split("\t", $line);
+        my @split_id = split("\/", $split_line[0]);
+        my $strand;
+        my $chr = $split_line[2];
+        my $chr_start = $split_line[3] - 1;
+        my $chr_end = 0;
+        my $feature_name = $split_line[0];
+        my $score = $split_id[1];
+        my $color = "133,0,33";
+        if ($split_line[1] == 0) {
+            $strand = "+";
+        }
+        elsif ($split_line[1] == 16) {
+            $strand = "-";
+        }
+        else {
+            next; #skips isoforms that aren't mapped
+        }
+        my @split_CIGAR_temp = split(/(\d+\D)/, $split_line[5]); #splits CIGAR code into segments and puts segments into an array (but also the empty values between them)
+        my @split_CIGAR;
+        foreach my $temporary(@split_CIGAR_temp) { #removes empty values from the array
+            if ($temporary =~ m/\d+\D/) {
+                push(@split_CIGAR, $temporary);
+            }
+        }
+        my $exon_sum = 0;
+        my @exon_lengths = ();
+        my @block_starts = (0);
+        my $count = 0;
+        foreach my $split_CIGAR(@split_CIGAR) {
+            $count++;
+            if (($count == 1) && (my ($five_prime_clipped_bases) = $split_CIGAR =~ m/(\d+)S$/)) { #ignores soft clipping at the beginning
+            }
+            
+            elsif (($count > 1) && (my ($three_prime_clipped_bases) = $split_CIGAR =~ m/(\d+)S$/)) { #ignores soft clipping at the end
+            }
+            elsif ($split_CIGAR =~ m/N$/) { #if element is an intron...
+                push(@exon_lengths, $exon_sum); #...adds the last value to the exon sum...
+                my ($intron_length) = $split_CIGAR =~ m/(\d+)/;#...gets intron length...
+                my $new_block_start = $exon_lengths[-1] + $block_starts[-1] + $intron_length;#...calculates new blockStart...
+                push(@block_starts, $new_block_start);#...adds new blockStart to array...
+                $exon_sum = 0;#...and resets the exon sum
+            }
+            else {
+                my ($value) = $split_CIGAR =~ m/(\d+)/;
+                if ($split_CIGAR =~ m/I$/) {#ignores insertions
+                    $exon_sum = $exon_sum - 0;
+                }
+                else {#adds matches, mismatches and deletions to the exon sum
+                    $exon_sum = $exon_sum + $value;
+                }
+            }
+        }
+        push(@exon_lengths, $exon_sum); #at the end of the CIGAR array, push the last exon sum into the exon_lengths array
+        $chr_end = $chr_start + $block_starts[-1] + $exon_lengths[-1];
+        my $exon_number = @exon_lengths;
+        print OUT $chr, "\t", $chr_start, "\t", $chr_end, "\t", $feature_name, "\t", $score, "\t", $strand, "\t", $chr_start, "\t", $chr_end, "\t", $color, "\t", $exon_number, "\t", join("\,", @exon_lengths), "\t", join("\,", @block_starts), "\n";
+    }
+    close(INF);
+    close(OUT);
+}
+
 #Create an array of validated start sites from the start sites input file:
 open(INF, "<$valid_starts_file") or die "couldn't open file";
 
@@ -28,7 +99,7 @@ while (my $line = <INF>) {
 close(INF);
 
 #Check each start site in the SMRT reads file against the array of validated start sites:
-open(INF, "<$test_file") or die "couldn't open file";
+open(INF, "<$test_file.bed") or die "couldn't open file";
 open(OUT, ">$test_file.valid_start.bed.temp");
 
 my @good_start;
@@ -449,7 +520,6 @@ while (my $line = <INF>) {
                     if ($val_introns eq $ann_introns) {
                         print OUT $val_cols[0], "\t", $val_cols[1], "\t", $val_cols[2], "\t", $ann_cols[3], "_", $val_cols[3], "\t", $val_cols[4], "\t", $val_cols[5], "\t", $val_cols[6], "\t", $val_cols[7], "\t", $ann_cols[8], "\t", $val_cols[9], "\t", $val_cols[10], "\t", $val_cols[11], "\n";
                     }
-
                 }
             }
         }
