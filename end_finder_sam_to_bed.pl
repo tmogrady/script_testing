@@ -50,11 +50,11 @@ else {
     $distance_between_SMRT_peaks = <STDIN>;
     chomp $distance_between_SMRT_peaks;
     
-    print "Enter minimum number of As for Illumina polyA tails (e.g. 5): ";
+    print "Enter minimum number of As for Illumina poly(A) tails (e.g. 5): ";
     $min_As = <STDIN>;
     chomp $min_As;
     
-    print "Enter minimum number of mismatches for Illumina polyA tails (e.g. 2): ";
+    print "Enter minimum number of mismatches for Illumina poly(A) tails (e.g. 2): ";
     $min_softclip = <STDIN>;
     chomp $min_softclip;
     
@@ -74,11 +74,11 @@ else {
     $min_SMRT = <STDIN>;
     chomp $min_SMRT;
     
-    print "Enter minimum number of Illumina polyA tails to support a 3' end (e.g. 1): ";
+    print "Enter minimum number of Illumina poly(A) tails to support a 3' end (e.g. 1): ";
     $min_ill = <STDIN>;
     chomp $min_ill;
     
-    print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 20): ";
+    print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 25): ";
     $ann_dist = <STDIN>;
     chomp $ann_dist;
 }
