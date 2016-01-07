@@ -39,7 +39,7 @@ if ($answer eq "y") {
     $min_dens = 2;
     $min_length = 1;
     $max_length = 20;
-    $dist_SMRT_CAGE = 2;
+    $dist_SMRT_CAGE = 3;
     $min_SMRT = 1;
     $ann_dist = 20;
 }
@@ -64,7 +64,7 @@ else {
     $max_length = <STDIN>;
     chomp $max_length;
 
-    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 2): ";
+    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 3): ";
     $dist_SMRT_CAGE = <STDIN>;
     chomp $dist_SMRT_CAGE;
 
