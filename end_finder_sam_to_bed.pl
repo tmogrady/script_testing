@@ -1,22 +1,18 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using SMRT fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped reads SMRT with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes bedgraph files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of SMRT 3' ends supported by either the annotation or the Illumina data.
-
-#SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
+#Accepts a SAM file using Iso-Seq fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped Iso-Seq reads with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes bedgraph files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of Iso-Seq 3' ends supported by either the annotation or the Illumina data.
 
 #USAGE:
-# perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
-
-#TO'G 6/11/2015
+# perl <PATH/read_end_finder.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
 
 use warnings;
 use strict;
 
-die "USAGE: 'perl <PATH/read_end_finder.pl> </PATH/SMRT_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+die "USAGE: 'perl <PATH/read_end_finder.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
 my ($SMRT_file, $ill_file, $ann_file) = @ARGV;
 
-print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
+print "Enter name of viral chromosome (e.g. chrEBV_Akata_inverted): ";
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
@@ -43,10 +39,10 @@ if ($answer eq "y") {
     $dist_SMRT_ill_u = 4;
     $min_SMRT = 5;
     $min_ill = 1;
-    $ann_dist = 25;
+    $ann_dist = 10;
 }
 else {
-    print "Enter desired window for collapsing SMRT 3' ends (e.g. 8): ";
+    print "Enter desired window for collapsing Iso-Seq 3' ends (e.g. 8): ";
     $distance_between_SMRT_peaks = <STDIN>;
     chomp $distance_between_SMRT_peaks;
     
@@ -62,15 +58,15 @@ else {
     $distance_between_ill_peaks = <STDIN>;
     chomp $distance_between_ill_peaks;
     
-    print "Enter number of bases downstream of SMRT ends to look for Illumina support (e.g. 10): ";
+    print "Enter number of bases downstream of Iso-Seq ends to look for Illumina support (e.g. 10): ";
     $dist_SMRT_ill_d = <STDIN>;
     chomp $dist_SMRT_ill_d;
     
-    print "Enter number of bases upstream of SMRT ends to look for Illumina support (e.g. 4): ";
+    print "Enter number of bases upstream of Iso-Seq ends to look for Illumina support (e.g. 4): ";
     $dist_SMRT_ill_u = <STDIN>;
     chomp $dist_SMRT_ill_u;
     
-    print "Enter minimum number of SMRT reads to report a 3' end (e.g. 5): ";
+    print "Enter minimum number of Iso_seq reads to report a 3' end (e.g. 5): ";
     $min_SMRT = <STDIN>;
     chomp $min_SMRT;
     
@@ -78,7 +74,7 @@ else {
     $min_ill = <STDIN>;
     chomp $min_ill;
     
-    print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 25): ";
+    print "Enter maximum distance in bp from an annotated end to be called as 'annotated' (e.g. 10): ";
     $ann_dist = <STDIN>;
     chomp $ann_dist;
 }
@@ -99,7 +95,7 @@ open(OUT, ">$SMRT_file.sorted.plus.sam.read_ends.bedgraph.temp") or die "couldn'
 my @dist;
 my $sum;
 my %plus_ends;
-print "Processing SMRT plus strand reads...\n";
+print "Processing Iso-Seq plus strand reads...\n";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -138,7 +134,7 @@ open(OUT, ">$SMRT_file.sorted.minus.sam.read_ends.bedgraph.temp") or die "couldn
 my $previous_coordinate=1;
 my $count=0;
 my $previous_chr = "start";
-print "Processing SMRT minus strand reads...\n";
+print "Processing Iso-Seq minus strand reads...\n";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -177,7 +173,7 @@ system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 open(INF, "<$SMRT_file.$viral_chr.read_ends.bedgraph.noheader") or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.read_ends.bedgraph") or die "couldn't open file";
 
-print OUT "track type=bedGraph name=\"$SMRT_file.$viral_chr.read_ends.bedgraph\" description=\"3' ends of SMRT reads from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedGraph name=\"$SMRT_file.$viral_chr.read_ends.bedgraph\" description=\"3' ends of Iso-Seq reads from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -190,7 +186,7 @@ system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_ends.bedgraph.noheader");
 open(INF, "<$SMRT_file.$viral_chr.read_ends.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.ends.temp.bed") or die "couldn't open file";
 
-print "Combining SMRT 3' ends within $distance_between_SMRT_peaks of each other and calculating consensus 3' ends...\n";
+print "Combining Iso-Seq 3' ends within $distance_between_SMRT_peaks of each other and calculating consensus 3' ends...\n";
 collapse_bedgraph($distance_between_SMRT_peaks);
 
 close(INF);
@@ -203,7 +199,7 @@ system("rm \Q$SMRT_file.ends.temp.bed\E");
 open(INF, "<$SMRT_file.ends.bed.noheader") or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.SMRT_ends.bed") or die "couldn't open file";
 
-print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_ends.bed\" description=\"consensus 3' ends of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_ends.bed\" description=\"consensus 3' ends of Iso-Seq reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -394,7 +390,7 @@ system("rm \Q$ill_file\E.polyA_ends.sam");
 
 open(INF, "<$ill_file.$viral_chr.polyA_sites.bed" ) or die "couldn't open file";
 
-print "Extracting SMRT 3' ends with Illumina polyA tails within $dist_SMRT_ill_d bases downstream or $dist_SMRT_ill_u upstream...\n";
+print "Extracting Iso-Seq 3' ends with Illumina polyA tails within $dist_SMRT_ill_d bases downstream or $dist_SMRT_ill_u upstream...\n";
 
 my %features_ill;
 my $key_combo_ill;
@@ -456,13 +452,13 @@ while(my $line = <INF>) {
     }
     if ($match_count) {
         if ($SMRT_cols[5] eq "+") {
-            my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
+            my $name = "$SMRT_cols[4].IsoSeq_$match_count.Ill";
             my $count = $match_count + $SMRT_cols[4];
             print OUT $SMRT_cols[0], "\t", $ill_coord-1, "\t", $ill_coord, "\t", $name, "\t", $count, "\t", $SMRT_cols[5], "\t", $SMRT_cols[3], "\n"; #prints to output, adjusting chrStart to 0-based
             undef($match_count);
         }
         if ($SMRT_cols[5] eq "-") {
-            my $name = "$SMRT_cols[4].SMRT_$match_count.Ill";
+            my $name = "$SMRT_cols[4].IsoSeq_$match_count.Ill";
             my $count = $match_count + $SMRT_cols[4];
             print OUT $SMRT_cols[0], "\t", $ill_coord, "\t", $ill_coord+1, "\t", $name, "\t", $count, "\t", $SMRT_cols[5], "\t", $SMRT_cols[3], "\n"; #prints to output, adujsting chrEnd
             undef($match_count);
@@ -470,7 +466,7 @@ while(my $line = <INF>) {
     }
     else {
         my @range_cols = split (":", $SMRT_cols[3]); #includes SMRT ends that are not supported by Illumina in this temporary file
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2]SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2].IsoSeq\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
@@ -517,9 +513,9 @@ close(INF);
 open(INF, "<$SMRT_file.$viral_chr.ends.bed.illumina_support.bed.temp" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.validated_ends.bed");
 
-print "Comparing SMRT ends to annotated ends...\n";
+print "Comparing Iso-Seq ends to annotated ends...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.SMRT_ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT SMRT read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.SMRT_ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT Iso-Seq read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_ill = 0;
@@ -561,7 +557,7 @@ while(my $line = <INF>) {
         }
     }
     if ($found_flag == 0) {
-        if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) {
+        if ($SMRT_cols[3] =~ /.+IsoSeq_.+Ill/) {
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $novel_found_by_SMRT_ill++;
         }
@@ -575,7 +571,7 @@ print "------------------------------------------------\n";
 
 if ($total_found > 0) {
     if ($SMRT_annotated != $annotated_found_by_SMRT) {
-        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single SMRT end or vice versa.\n\n";
+        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single Iso-Seq end or vice versa.\n\n";
     }
     else {
         print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
