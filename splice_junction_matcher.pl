@@ -391,7 +391,7 @@ while (my $line = <INF>) {
         $val_SMRT_count++;
     }
     else {
-        if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) { #if the intron doesn't match an annotated intron but does have Illumina support, notes that and prints out the line
+        if ($SMRT_cols[3] =~ /.+IsoSeq_.+Ill/) { #if the intron doesn't match an annotated intron but does have Illumina support, notes that and prints out the line
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
             $nov_SMRT_count++;
             $val_SMRT_count++;
