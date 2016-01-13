@@ -721,7 +721,7 @@ open(OUT, ">${viral_chr}_validated_starts_stats.txt");
 
 if ($total_found > 0) {
     if ($SMRT_annotated != $annotated_found_by_SMRT) {
-        print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n\n";
+        print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n";
         print OUT "$viral_chr\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\t$annotated_found_by_SMRT detected by Iso-Seq\n";
     }
     else {
