@@ -37,7 +37,7 @@ if ($answer eq "y") {
     $max_length = 20;
     $dist_SMRT_CAGE = 3;
     $min_SMRT = 1;
-    $ann_dist = 20;
+    $ann_dist = 10;
 }
 else {
     print "Enter desired window for collapsing Iso-Seq 5' starts (e.g. 8): ";
