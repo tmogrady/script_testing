@@ -282,10 +282,10 @@ while(my $line = <INF>) {
     my $SMRT_key_combo = "$cols[0]$cols[1]$cols[2]$cols[5]"; #for each line in the SMRT file, creates a variable/key combining chromosome, start coordinate, end coordinate and strand
 	if (exists $ill_junctions{$SMRT_key_combo}) { #checks to see if the key exists in the Illumina hash: if so, prints it out
         my $junction_depth = $cols[4] + $ill_junctions{$SMRT_key_combo};
-		print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[4]IsoSeq_$ill_junctions{$SMRT_key_combo}Ill\t$junction_depth\t$cols[5]\n";
+		print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[4].IsoSeq_$ill_junctions{$SMRT_key_combo}.Ill\t$junction_depth\t$cols[5]\n";
 	}
     else {
-        print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]IsoSeq\t$cols[4]\t$cols[5]\n";
+        print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3].IsoSeq\t$cols[4]\t$cols[5]\n";
     }
 }
 close(INF);
@@ -386,13 +386,13 @@ while (my $line = <INF>) {
     my @SMRT_cols = split("\t", $line);
     my $SMRT_intron_coords = "$SMRT_cols[0]:$SMRT_cols[1]:$SMRT_cols[2]:$SMRT_cols[5]"; #creates a key to search the has of annotated introns
     if (exists $ann_intron_coord_pair{$SMRT_intron_coords}) { #if the intron matches an annotated intron, notes that and prints out the line
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
         $ann_SMRT_count++;
         $val_SMRT_count++;
     }
     else {
         if ($SMRT_cols[3] =~ /.+SMRT_.+Ill/) { #if the intron doesn't match an annotated intron but does have Illumina support, notes that and prints out the line
-            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
+            print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\n";
             $nov_SMRT_count++;
             $val_SMRT_count++;
         }
