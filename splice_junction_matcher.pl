@@ -401,6 +401,8 @@ while (my $line = <INF>) {
 close(OUT);
 close(INF);
 
+print "------------------------------------------------\n";
+
 open(OUT, ">${viral_chr}_validated_introns_stats.txt");
 
 if ($val_SMRT_count > 0) {
