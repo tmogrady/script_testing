@@ -1,24 +1,20 @@
 #!/usr/bin/perl
 
-#Accepts a junctions files from GMAP/SMRT (generated with the -f introns argument) and an SJ.out.tab files from STAR/Illumina. Returns 3 bed files: one of SMRT splice junctions, one of Illumina splice junctions and one of junctions detected by both methods.
-
-#SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
+#Accepts a junctions files from GMAP/Iso-Seq (generated with the -f introns argument) and an SJ.out.tab files from STAR/Illumina. Returns 3 bed files: one of SMRT introns, one of Illumina introns and one of introns detected by both methods.
 
 #USAGE:
-# perl <PATH/splice_junction_matcher.pl> </PATH/SMRT_introns_file> </PATH/Illumina_SJ.out.tab_file> </PATH/transcript_annotation_bed_file> <coordinates_to_ignore_bed_file(optional)> 
-
-#TO'G 6/11/2015
+# perl <PATH/splice_junction_matcher.pl> </PATH/Iso-Seq_introns_file> </PATH/Illumina_SJ.out.tab_file> </PATH/transcript_annotation_bed_file> <coordinates_to_ignore_bed_file(optional)>
 
 use warnings;
 use strict;
 
 my ($SMRT_jfile, $ill_jfile, $ann_file, $ig_file) = @ARGV;
 
-print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
+print "Enter name of viral chromosome (e.g. chrEBV_Akata_inverted): ";
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
-print "Enter minimum SMRT read depth to report a splice junction (e.g. 1): ";
+print "Enter minimum Iso-Seq read depth to report a splice junction (e.g. 1): ";
 my $min_SMRTj = <STDIN>;
 chomp $min_SMRTj;
 
@@ -32,7 +28,7 @@ print "------------------------------------------------\n";
 open(INF, "<$SMRT_jfile");
 open(OUT, ">$SMRT_jfile.temp");
 
-print "Processing SMRT splice junctions...\n";
+print "Processing Iso-Seq splice junctions...\n";
 
 while(my $line = <INF> ) {
     chomp($line);
@@ -123,7 +119,7 @@ system("rm \Q$SMRT_jfile\E.bed.temp");
 #if an annotation file of regions to be ignored is supplied, remove the SMRT junctions with a donor or acceptor in those regions:
 if (defined $ig_file) {
     open(INF, "<$ig_file");
-    print "Removing SMRT junctions with donor or acceptor in ignored region...\n";
+    print "Removing Iso-Seq junctions with donor or acceptor in ignored region...\n";
     my @ig_coords;
     while(my $line = <INF>) {
         chomp($line);
@@ -165,7 +161,7 @@ else {
 }
 open(OUT, ">$SMRT_jfile.$viral_chr.bed") or die "couldn't open file";
 
-print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.bed\" description=\"SMRT introns from splice_junction_matcher.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.bed\" description=\"Iso-Seq introns from splice_junction_matcher.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -273,10 +269,10 @@ while(my $line = <INF>) {
     my $SMRT_key_combo = "$cols[0]$cols[1]$cols[2]$cols[5]"; #for each line in the SMRT file, creates a variable/key combining chromosome, start coordinate, end coordinate and strand
 	if (exists $ill_junctions{$SMRT_key_combo}) { #checks to see if the key exists in the Illumina hash: if so, prints it out
         my $junction_depth = $cols[4] + $ill_junctions{$SMRT_key_combo};
-		print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[4]SMRT_$ill_junctions{$SMRT_key_combo}Ill\t$junction_depth\t$cols[5]\n";
+		print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[4]IsoSeq_$ill_junctions{$SMRT_key_combo}Ill\t$junction_depth\t$cols[5]\n";
 	}
     else {
-        print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]SMRT\t$cols[4]\t$cols[5]\n";
+        print OUT "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]IsoSeq\t$cols[4]\t$cols[5]\n";
     }
 }
 close(INF);
@@ -364,9 +360,9 @@ close(INF);
 open(INF, "<$SMRT_jfile.$viral_chr.illumina_support.bed.temp");
 open(OUT, ">$SMRT_jfile.$viral_chr.validated_introns.bed");
 
-print "Comparing SMRT junctions to annotation file...\n";
+print "Comparing Iso-Seq junctions to annotation file...\n";
 
-print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.validated_introns.bed\" description=\"Introns detected by SMRT with read depth at least $min_SMRTj supported by Illumina-detected junctions with read depth at least $min_illj and/or annotation. From splice_junction_matcher.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_jfile.$viral_chr.validated_introns.bed\" description=\"Introns detected by Iso-Seq with read depth at least $min_SMRTj supported by Illumina-detected junctions with read depth at least $min_illj and/or annotation. From splice_junction_matcher.pl\"\n";
 
 my $val_SMRT_count = 0;
 my $ann_SMRT_count = 0;
@@ -393,7 +389,7 @@ close(OUT);
 close(INF);
 
 if ($val_SMRT_count > 0) {
-    print "$val_SMRT_count validated junctions detected in the SMRT file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
+    print "$val_SMRT_count validated junctions detected in the Iso-Seq file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
 }
 else {
     print "No validated junctions found.\n";
