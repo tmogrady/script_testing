@@ -1,18 +1,14 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using Iso-Seq fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
-
-#SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
+#Accepts a SAM file using Iso-Seq fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped Iso-Seq reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes a bedgraph file of Iso-Seq 5' starts, a bed file of the weighted centers of Iso-Seq start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of Iso_seq 5' starts supported by the CAGE data, with their annotation status noted.
 
 #USAGE:
-# perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
-
-#TO'G 9/11/2015
+# perl <PATH/start_finder_sam_to_bed.pl> </PATH/Iso-Seq_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
 
 use warnings;
 use strict;
 
-die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/Iso-Seq_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
 my ($SMRT_file, $CAGE_file, $ann_file) = @ARGV;
 
@@ -44,27 +40,27 @@ if ($answer eq "y") {
     $ann_dist = 20;
 }
 else {
-    print "Enter desired window for collapsing SMRT 5' starts (e.g. 8): ";
+    print "Enter desired window for collapsing Iso-Seq 5' starts (e.g. 8): ";
     $distance_between_SMRT_peaks = <STDIN>;
     chomp $distance_between_SMRT_peaks;
 
-    print "Enter minimum tags per CAGE cluster: ";
+    print "Enter minimum tags per CAGE cluster (e.g. 15): ";
     $min_tags = <STDIN>;
     chomp $min_tags;
 
-    print "Enter minimum relative density for CAGE clusters: ";
+    print "Enter minimum relative density for CAGE clusters (e.g. 2): ";
     $min_dens = <STDIN>;
     chomp $min_dens;
 
-    print "Enter minimum CAGE cluster length: ";
+    print "Enter minimum CAGE cluster length (e.g. 1): ";
     $min_length = <STDIN>;
     chomp $min_length;
 
-    print "Enter maximum CAGE cluster length: ";
+    print "Enter maximum CAGE cluster length (e.g. 20): ";
     $max_length = <STDIN>;
     chomp $max_length;
 
-    print "Enter desired maximum allowable distance between SMRT and CAGE 5' starts (e.g. 3): ";
+    print "Enter desired maximum allowable distance between Iso-Seq and CAGE 5' starts (e.g. 3): ";
     $dist_SMRT_CAGE = <STDIN>;
     chomp $dist_SMRT_CAGE;
 
@@ -72,7 +68,7 @@ else {
     $min_SMRT = <STDIN>;
     chomp $min_SMRT;
 
-    print "Enter maximum distance in bp from an annotated start to be called as 'annotated' (e.g. 20): ";
+    print "Enter maximum distance in bp from an annotated start to be called as 'annotated' (e.g. 10): ";
     $ann_dist = <STDIN>;
     chomp $ann_dist;
 }
@@ -92,7 +88,7 @@ open(OUT, ">$SMRT_file.sorted.plus.sam.read_starts.bedgraph") or die "couldn't o
 my $previous_coordinate=1;
 my $count=0;
 my $previous_chr = "start";
-print "Processing SMRT plus strand reads...\n";
+print "Processing Iso-Seq plus strand reads...\n";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -130,7 +126,7 @@ open(OUT, ">$SMRT_file.sorted.minus.sam.read_starts.bedgraph.temp") or die "coul
 my @CIGAR_dist;
 my $sum;
 my %minus_starts;
-print "Processing SMRT minus strand reads...\n";
+print "Processing Iso-Seq minus strand reads...\n";
 
 while (my $line = <INF>) {
     chomp($line);
@@ -186,7 +182,7 @@ system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph.noheader");
 open(INF, "<$SMRT_file.$viral_chr.read_starts.bedgraph") or die "couldn't open file";
 open(OUT, ">$SMRT_file.starts.temp.bed") or die "couldn't open file";
 
-print "Combining SMRT 5' starts within $distance_between_SMRT_peaks of each other and calculating consensus 5' starts...\n";
+print "Combining Iso-Seq 5' starts within $distance_between_SMRT_peaks of each other and calculating consensus 5' starts...\n";
 collapse_bedgraph($distance_between_SMRT_peaks);
 
 close(INF);
@@ -199,7 +195,7 @@ system("rm \Q$SMRT_file.starts.temp.bed\E");
 open(INF, "<$SMRT_file.starts.bed.noheader") or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.SMRT_starts.bed") or die "couldn't open file";
 
-print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_starts.bed\" description=\"consensus 5' starts of SMRT reads within $distance_between_SMRT_peaks bp collapsed to weighted center from start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bed name=\"$SMRT_file.$viral_chr.SMRT_starts.bed\" description=\"consensus 5' starts of Iso-Seq reads within $distance_between_SMRT_peaks bp collapsed to weighted center from start_finder_sam_to_bed.pl\"\n";
 while (my $line = <INF>) {
     print OUT $line;
 }
@@ -556,7 +552,7 @@ system("rm \Q$CAGE_file\E.clusters.$min_tags.$min_dens.$min_length.$max_length.b
 
 open(INF, "<$CAGE_file.$viral_chr.CAGE_starts.bed" ) or die "couldn't open file";
 
-print "Extracting SMRT 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
+print "Extracting Iso-Seq 5' starts within $dist_SMRT_CAGE bases of CAGE clusters...\n";
 
 my %features_CAGE;
 my $key_combo_CAGE;
@@ -617,7 +613,7 @@ while(my $line = <INF>) {
     }
     else {
         my @range_cols = split (":", $SMRT_cols[3]);
-        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2].SMRT\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
+        print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$range_cols[2].IsoSeq\t$range_cols[2]\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
     }
 }
 
@@ -664,9 +660,9 @@ close(INF);
 open(INF, "<$SMRT_file.$viral_chr.SMRT_starts.bed.CAGE_support.bed.temp" ) or die "couldn't open file";
 open(OUT, ">$SMRT_file.$viral_chr.validated_starts.bed");
 
-print "Comparing SMRT starts to annotated starts...\n";
+print "Comparing Iso-seq starts to annotated starts...\n";
 
-print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.validated_starts.bed\" description=\"consensus SMRT 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
+print OUT "track type=bedDetail name=\"$SMRT_file.$viral_chr.validated_starts.bed\" description=\"consensus Iso-Seq 5' starts of collapse value 8 supported by at least $min_SMRT read(s) within $dist_SMRT_CAGE bp of CAGE clusters or within $ann_dist bp of annotated starts. From start_finder_sam_to_bed.pl\"\n";
 
 my $annotated_found_by_SMRT = 0;
 my $novel_found_by_SMRT_CAGE = 0;
@@ -709,7 +705,7 @@ while(my $line = <INF>) {
 
     }
     if ($found_flag == 0) {
-        if ($SMRT_cols[3] =~ /.+SMRT_.+CAGE/) {
+        if ($SMRT_cols[3] =~ /.+IsoSeq_.+CAGE/) {
             print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tnov_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
             $novel_found_by_SMRT_CAGE++;
         }
@@ -721,7 +717,7 @@ my $total_found = $SMRT_annotated + $novel_found_by_SMRT_CAGE;
 print "------------------------------------------------\n";
 
 if ($SMRT_annotated != $annotated_found_by_SMRT) {
-    print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single SMRT start or vice versa.\n\n";
+    print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n\n";
 }
 else {
     print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 5' starts).\n\n";
