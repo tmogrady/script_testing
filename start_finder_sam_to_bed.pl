@@ -12,7 +12,7 @@ die "USAGE: 'perl <PATH/start_finder_sam_to_bed.pl> </PATH/Iso-Seq_sam_file> </P
 
 my ($SMRT_file, $CAGE_file, $ann_file) = @ARGV;
 
-print "Enter name of viral chromosome [e.g. chrEBV(Akata_107955to171322_1to107954)]: ";
+print "Enter name of viral chromosome [e.g. chrEBV_Akata_inverted]: ";
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
