@@ -561,24 +561,30 @@ while(my $line = <INF>) {
     }
 }
 
-
 my $total_found = $SMRT_annotated + $novel_found_by_SMRT_ill;
+
+close(INF);
+close(OUT);
 
 print "------------------------------------------------\n";
 
+open(OUT, ">${viral_chr}_validated_starts_stats.txt");
+
 if ($total_found > 0) {
     if ($SMRT_annotated != $annotated_found_by_SMRT) {
-        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single Iso-Seq end or vice versa.\n\n";
+        print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single Iso-Seq end or vice versa.\n";
+        print OUT "$viral_chr\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n\t$annotated_found_by_SMRT detected by Iso-Seq\n";
     }
     else {
         print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
+        print OUT "$viral_chr\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n";
     }
 }
 else {
     print "No 3' ends validated\n";
+    print OUT "No validated 3' ends found";
 }
 
-close(INF);
 close(OUT);
 
 system("rm \Q$SMRT_file\E.\Q$viral_chr\E.ends.bed.illumina_support.bed.temp");
