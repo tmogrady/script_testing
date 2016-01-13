@@ -14,13 +14,26 @@ print "Enter name of viral chromosome (e.g. chrEBV_Akata_inverted): ";
 my $viral_chr = <STDIN>;
 chomp $viral_chr;
 
-print "Enter minimum Iso-Seq read depth to report a splice junction (e.g. 1): ";
-my $min_SMRTj = <STDIN>;
-chomp $min_SMRTj;
+my $min_SMRTj;
+my $min_illj;
 
-print "Enter minimum Illumina read depth to report a splice junction (e.g. 1): ";
-my $min_illj = <STDIN>;
-chomp $min_illj;
+print "Use default parameters [y/n]? ";
+my $answer = <STDIN>;
+chomp $answer;
+
+if ($answer eq "y") {
+    $min_SMRTj = 1;
+    $min_illj = 1;
+}
+else {
+    print "Enter minimum Iso-Seq read depth to report a splice junction (e.g. 1): ";
+    $min_SMRTj = <STDIN>;
+    chomp $min_SMRTj;
+
+    print "Enter minimum Illumina read depth to report a splice junction (e.g. 1): ";
+    $min_illj = <STDIN>;
+    chomp $min_illj;
+}
 
 print "------------------------------------------------\n";
 
