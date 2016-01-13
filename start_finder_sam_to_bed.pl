@@ -679,8 +679,8 @@ while(my $line = <INF>) {
                 if ($found_flag == 0) {
                     print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\tann_$SMRT_cols[5]_$SMRT_cols[3]\t$SMRT_cols[4]\t$SMRT_cols[5]\t$SMRT_cols[6]\n";
                     $found_flag = 1;
-                    $annotated_found_by_SMRT++;
-                    $SMRT_annotated++;
+                    $annotated_found_by_SMRT++; #counts multiple annotated starts near SMRT starts
+                    $SMRT_annotated++; #only counts one annotated start per SMRT start
                 }
                 elsif ($found_flag == 1) {
                     $annotated_found_by_SMRT++;
@@ -712,16 +712,28 @@ while(my $line = <INF>) {
 
 my $total_found = $SMRT_annotated + $novel_found_by_SMRT_CAGE;
 
+close(INF);
+close(OUT);
+
 print "------------------------------------------------\n";
 
-if ($SMRT_annotated != $annotated_found_by_SMRT) {
-    print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n\n";
+open(OUT, ">${viral_chr}_validated_starts_stats.txt");
+
+if ($total_found > 0) {
+    if ($SMRT_annotated != $annotated_found_by_SMRT) {
+        print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n\n";
+        print OUT "$viral_chr\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\t$annotated_found_by_SMRT detected by Iso-Seq\n";
+    }
+    else {
+        print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 5' starts).\n\n";
+        print OUT "$viral_chr\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n";
+    }
 }
 else {
-    print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 5' starts).\n\n";
+    print "No validated starts found.\n";
+    print OUT "No validated starts found.\n";
 }
 
-close(INF);
 close(OUT);
 
 system("rm \Q$SMRT_file\E.\Q$viral_chr\E.SMRT_starts.bed.CAGE_support.bed.temp");
