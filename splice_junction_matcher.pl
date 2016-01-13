@@ -405,11 +405,21 @@ open(OUT, ">${viral_chr}_validated_introns_stats.txt");
 
 if ($val_SMRT_count > 0) {
     print "$val_SMRT_count validated junctions detected in the Iso-Seq file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
-    print OUT "$viral_chr\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n";
+    if (defined $ig_file) {
+        print OUT "$viral_chr\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
+    }
+    else {
+        print OUT "$viral_chr\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n";
+    }
 }
 else {
     print "No validated junctions found.\n";
-    print OUT "No validated junctions found.\n";
+    if (defined $ig_file) {
+        print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
+    }
+    else{
+        print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file \n";
+    }
 }
 
 close(OUT);
