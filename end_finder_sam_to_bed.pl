@@ -207,7 +207,6 @@ close(OUT);
 close(INF);
 
 system("rm \Q$SMRT_file\E.ends.bed.noheader");
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_ends.bedgraph");
 
 #####----------ILLUMINA FILE PROCESSING-------------######
 
@@ -383,8 +382,6 @@ close(OUT);
 close(INF);
 
 system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bed.noheader");
-system("rm \Q$ill_file\E.\Q$viral_chr\E.polyA_sites.bedgraph");
-system("rm \Q$ill_file\E.polyA_ends.sam");
 
 #####----------SEEKING ILLUMINA SUPPORT FOR SMRT ENDS-------------######
 
