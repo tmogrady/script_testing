@@ -203,8 +203,6 @@ close(OUT);
 close(INF);
 
 system("rm \Q$SMRT_file\E.starts.bed.noheader");
-system("rm \Q$SMRT_file\E.\Q$viral_chr\E.read_starts.bedgraph");
-
 
 #####----------PROCESSING CAGE DATA-------------######
 
