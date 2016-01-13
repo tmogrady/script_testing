@@ -568,7 +568,7 @@ close(OUT);
 
 print "------------------------------------------------\n";
 
-open(OUT, ">${viral_chr}_validated_starts_stats.txt");
+open(OUT, ">${viral_chr}_validated_ends_stats.txt");
 
 if ($total_found > 0) {
     if ($SMRT_annotated != $annotated_found_by_SMRT) {
