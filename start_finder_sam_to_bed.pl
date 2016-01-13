@@ -604,7 +604,7 @@ while(my $line = <INF>) {
         }
     }
     if ($match_count) {
-        my $name = "$SMRT_cols[4].SMRT_$match_count.CAGE";
+        my $name = "$SMRT_cols[4].IsoSeq_$match_count.CAGE";
         my $count = $match_count + $SMRT_cols[4];
         print OUT "$SMRT_cols[0]\t$SMRT_cols[1]\t$SMRT_cols[2]\t$name\t$count\t$SMRT_cols[5]\t$SMRT_cols[3]\n";
         undef($match_count);
