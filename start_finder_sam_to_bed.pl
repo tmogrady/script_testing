@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a SAM file using Iso-Seq fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped Iso-Seq reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes a bedgraph file of Iso-Seq 5' starts, a bed file of the weighted centers of Iso-Seq start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of Iso_seq 5' starts supported by the CAGE data, with their annotation status noted.
+#Accepts a SAM file of Iso-Seq fl data, a SAM file of CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped Iso-Seq reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes a bedgraph file of Iso-Seq 5' starts, a bed file of the weighted centers of Iso-Seq start clusters, a bedgraph file of CAGE tag 5' starts, a bed file of the weighted centers of Paraclu-identified CAGE 5' start clusters, and a bed file of Iso_seq 5' starts supported by the CAGE data, with their annotation status noted.
 
 #USAGE:
 # perl <PATH/start_finder_sam_to_bed.pl> </PATH/Iso-Seq_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
