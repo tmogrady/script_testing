@@ -467,7 +467,7 @@ while (my $line = <INF>) {
 close(INF);
 
 open(INF, "<$test_file.isoforms.bed") or die "couldn't open file";
-open(OUT, ">$test_file.isoforms_with_annotation.bed");
+open(OUT, ">$test_file.validated_transcripts.bed");
 
 print "Checking for annotated isoforms...\n";
 
@@ -477,7 +477,7 @@ my $upper_limit_e;
 my $lower_limit_e;
 my $ann_count = 0;
 
-print OUT "track type=bed name=\"$test_file.isoforms_with_annotation.bed\" description=\"validated transcript structures from transcript_structure_validator.pl\"\n";
+print OUT "track type=bed name=\"$test_file.validated_transcripts.bed\" description=\"validated transcript structures from transcript_structure_validator.pl\"\n";
 
 while (my $line = <INF>) {
 	chomp($line);
