@@ -1,5 +1,5 @@
 #!usr/bin/perl
-#Takes a sam file of Iso-Seq fl isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
+#Takes a sam file of Iso-Seq fl isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures, which are compared to an annotation file.
 
 use warnings;
 use strict;
