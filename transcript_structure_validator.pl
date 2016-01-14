@@ -4,7 +4,7 @@
 use warnings;
 use strict;
 
-die "USAGE: 'perl <PATH/transcript_structure_validator.pl> </PATH/SMRT_sam_file> </PATH/validated_starts_file> </PATH/validated_ends_file> </PATH/validated_introns_file> </PATH/Annotation_bed_file>'" unless @ARGV == 5;
+die "USAGE: 'perl <PATH/transcript_structure_validator.pl> </PATH/Iso-Seq_sam_file> </PATH/validated_starts_file> </PATH/validated_ends_file> </PATH/validated_introns_file> </PATH/Annotation_bed_file>'" unless @ARGV == 5;
 
 my ($test_file, $valid_starts_file, $valid_ends_file, $valid_introns_file, $ann_file) = (@ARGV);
 
@@ -18,7 +18,7 @@ chomp $end_dist;
 
 #Convert SMRT sam file to bed:
 
-print "------------------------------------------------\nReformatting SMRT file...\n";
+print "------------------------------------------------\nReformatting Iso-Seq file...\n";
 
 open(INF, "<$test_file") or die "couldn't open input file";
 open(OUT, ">$test_file.bed") or die "couldn't open output file";
