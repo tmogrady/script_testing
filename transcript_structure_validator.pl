@@ -1,6 +1,5 @@
 #!usr/bin/perl
-#Takes a sam file of PacBio SMRT isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
-#TO'G 5/14/15
+#Takes a sam file of Iso-Seq fl isoforms and compares them to a list of validated 5' ends, 3' ends and introns to create a list of validated transcript structures.
 
 use warnings;
 use strict;
