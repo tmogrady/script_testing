@@ -216,6 +216,7 @@ system("awk '\$2==16 \|\| \$2==73 \|\| \$2==97 \|\| \$2==99 \|\| \$2==145 \|\| \
 
 open(INF, "<$CAGE_file.sorted.plus.sam.temp") or die "couldn't open file";
 open(OUT, ">$CAGE_file.read_starts.txt") or die "couldn't open file";
+open(OUT2, ">$CAGE_file.starts.bedgraph.temp");
 
 my $prev_coord=0.5;
 my $start_count=0;
@@ -235,7 +236,8 @@ while (my $line = <INF>) {
         }
         
         else {
-            print OUT $viral_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints to output file
+            print OUT $viral_chr, "\t+\t", $prev_coord, "\t", $start_count, "\n"; #prints to output txt file for Paraclu
+            print OUT2 $viral_chr, "\t", $prev_coord-1, "\t", $prev_coord, "\t", $start_count, "\n"; #prints to output bedgraph file
             $prev_coord = $cols[3];
             $start_count = 1;
         }
@@ -272,12 +274,29 @@ while (my $line = <INF>) {
 }
 foreach my $start_coord (sort keys %minus_start) { #prints out a(n inadequately) sorted file. Doesn't need to be sorted because Paraclu will do that anyways.
     print OUT "$viral_chr\t-\t$start_coord\t$minus_start{$start_coord}\n";
+    print OUT2 $viral_chr, "\t", $start_coord-1, "\t", $start_coord, "\t-", $minus_start{$start_coord}, "\n"; #prints to output bedgraph file
+}
+close(INF);
+close(OUT);
+close(OUT2);
+
+system("rm \Q$CAGE_file\E.sorted.minus.sam.temp");
+system("rm \Q$CAGE_file\E.sorted.temp");
+system("sort -k2,3n \Q$CAGE_file\E.starts.bedgraph.temp > \Q$CAGE_file\E.starts.bedgraph.noheader");
+system("rm \Q$CAGE_file\E.starts.bedgraph.temp");
+
+#add header to bedgraph file
+open(INF, "<$CAGE_file.starts.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$CAGE_file.$viral_chr.starts.bedgraph") or die "couldn't open file";
+
+print OUT "track type=bedgraph name=\"$CAGE_file.$viral_chr.starts.bedgraph\" description=\"5' starts of CAGE tags from start_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
 }
 close(INF);
 close(OUT);
 
-system("rm \Q$CAGE_file\E.sorted.minus.sam.temp");
-system("rm \Q$CAGE_file\E.sorted.temp");
+system("rm \Q$CAGE_file\E.starts.bedgraph.noheader");
 
 #Running Paraclu to define clusters
 
