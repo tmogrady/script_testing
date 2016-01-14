@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Accepts a junctions files from GMAP/Iso-Seq (generated with the -f introns argument) and an SJ.out.tab files from STAR/Illumina. Returns 3 bed files: one of SMRT introns, one of Illumina introns and one of introns detected by both methods.
+#Accepts a junctions files from GMAP/Iso-Seq (generated with the -f introns argument), an SJ.out.tab files from STAR/Illumina and an annotation file. Returns 3 bed files: one of SMRT introns, one of Illumina introns and one of introns detected by both methods. Annotation status of validated introns is noted.
 
 #USAGE:
 # perl <PATH/splice_junction_matcher.pl> </PATH/Iso-Seq_introns_file> </PATH/Illumina_SJ.out.tab_file> </PATH/transcript_annotation_bed_file> <coordinates_to_ignore_bed_file(optional)>
