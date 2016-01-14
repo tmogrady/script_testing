@@ -8,11 +8,11 @@ die "USAGE: 'perl <PATH/transcript_structure_validator.pl> </PATH/Iso-Seq_sam_fi
 
 my ($test_file, $valid_starts_file, $valid_ends_file, $valid_introns_file, $ann_file) = (@ARGV);
 
-print "Enter maximum distance from an annotated 5' start to be called annotated (e.g. 35): ";
+print "Enter maximum distance from an annotated 5' start to be called annotated (e.g. 10): ";
 my $start_dist = <STDIN>;
 chomp $start_dist;
 
-print "Enter maximum distance from an annotated 3' end to be called annotated (e.g. 25): ";
+print "Enter maximum distance from an annotated 3' end to be called annotated (e.g. 10): ";
 my $end_dist = <STDIN>;
 chomp $end_dist;
 
