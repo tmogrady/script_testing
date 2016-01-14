@@ -17,6 +17,10 @@ print "Enter cushion distance for 3' ends: ";
 my $end_cushion = <STDIN>;
 chomp $end_cushion;
 
+print "Enter minimum required number of Illumina reads in first 100 bases: ";
+my $ill_depth = <STDIN>;
+chomp $ill_depth;
+
 my $datestring = localtime();
 print "-------------\nstart at $datestring\n-------------\n";
 
@@ -166,29 +170,35 @@ while (my $line = <INF>) {
         while (my $line2 = <INF2>) { #or should this be a foreach?
             chomp($line2);
             my @cols2 = split("\t", $line2);
-            $ill_found_flag = 0;
             if (($chr eq $cols2[0]) and ($strand eq $cols2[5])) {
                 if ($cols2[5] eq "+") {
                     $plus_boundary = ($chrStart + 100);
                     if (($cols2[1] >= $chrStart) and ($cols2[1] <= $plus_boundary)) {
-                        print OUT2 $out_line;
-                        $ill_found_flag = 1;
-                        last;
+                        $ill_found_flag++;
+                        if ($ill_found_flag == $ill_depth) {
+                            print OUT2 $out_line;
+                            last;
+                        }
                     }
                 }
                 if ($cols2[5] eq "-") {
                     $minus_boundary = ($chrEnd - 100);
                     if (($cols2[2] >= $minus_boundary) and ($cols2[2] <= $chrEnd)) {
+                        $ill_found_flag++;
+                        if ($ill_found_flag == $ill_depth) {
                         print OUT2 $out_line;
-                        $ill_found_flag = 1;
-                        last;
+                            last;
+                        }
                     }
                 }
             }
         }
-        if ($ill_found_flag == 0) {
+        if ($ill_found_flag < $ill_depth) {
             print OUT $out_line;
         }
+        
+        $ill_found_flag = 0;
+        
        close(INF2);
     }
     if ($end_found_flag == 0) {
