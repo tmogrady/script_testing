@@ -27,25 +27,25 @@ while (my $line = <INF>) {
     $line =~ s/\r//g;
     chomp($line);
     next if ($line =~ m/\@/); #skips SAM header lines
-    my @split_line = split("\t", $line);
-    my @split_id = split("\/", $split_line[0]);
+    my @cols = split("\t", $line);
+    my @split_id = split("\/", $cols[0]);
     my $strand;
-    my $chr = $split_line[2];
-    my $chr_start = $split_line[3] - 1;
+    my $chr = $cols[2];
+    my $chr_start = $cols[3] - 1;
     my $chr_end = 0;
-    my $feature_name = $split_line[0];
+    my $feature_name = $cols[0];
     my $score = $split_id[1];
     my $color = "133,0,33";
-    if ($split_line[1] == 0) {
+    if ($cols[1] == 0) {
         $strand = "+";
     }
-    elsif ($split_line[1] == 16) {
+    elsif ($cols[1] == 16) {
         $strand = "-";
     }
     else {
         next; #skips isoforms that aren't mapped
     }
-    my @split_CIGAR_temp = split(/(\d+\D)/, $split_line[5]); #splits CIGAR code into segments and puts segments into an array (but also the empty values between them)
+    my @split_CIGAR_temp = split(/(\d+\D)/, $cols[5]); #splits CIGAR code into segments and puts segments into an array (but also the empty values between them)
     my @split_CIGAR;
     foreach my $temporary(@split_CIGAR_temp) { #removes empty values from the array
         if ($temporary =~ m/\d+\D/) {
