@@ -207,7 +207,7 @@ while(my $line = <INF> ) {
 close(OUT);
 close(INF);
 
-#if an annotation file of regions to be ignored is supplied, remove the SMRT junctions with a donor or acceptor in those regions:
+#if an annotation file of regions to be ignored is supplied, remove the Illumina junctions with a donor or acceptor in those regions:
 if (defined $ig_file) {
     open(INF, "<$ig_file");
     print "Removing Illumina junctions with donor or acceptor in ignored region...\n";
