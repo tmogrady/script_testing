@@ -3,12 +3,12 @@
 #Accepts a SAM file using Iso-Seq fl data, a SAM file using Illumina data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped Iso-Seq reads with 3' ends at each genomic position and estimates consensus locations of clusters of 3' ends. Extracts Illumina reads containing apparent polyA tails and estimates consensus locations of clusters of polyadenylation sites. Output includes bedgraph files of all 3' ends, bed files of the weighted centers of end clusters, a sam file of reads with polyA tails and a bed file of Iso-Seq 3' ends supported by either the annotation or the Illumina data.
 
 #USAGE:
-# perl <PATH/read_end_finder.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
+# perl <PATH/TRIMD_end_validator.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>
 
 use warnings;
 use strict;
 
-die "USAGE: 'perl <PATH/read_end_finder.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
+die "USAGE: 'perl <PATH/TRIMD_end_validator.pl> </PATH/Iso-Seq_sam_file> </PATH/Illumina_sam_file> </PATH/Annotation_bed_file>'" unless @ARGV == 3;
 
 my ($SMRT_file, $ill_file, $ann_file) = @ARGV;
 
