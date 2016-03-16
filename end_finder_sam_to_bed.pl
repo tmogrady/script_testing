@@ -79,8 +79,9 @@ else {
     chomp $ann_dist;
 }
 
+print "================================================\n";
 
-print "------------------------------------------------\n";
+#####----------SMRT FILE CHROMOSOME EXTRACTION-------------######
 
 open(INF, "<$SMRT_file") or die "couldn't open file";
 
@@ -98,7 +99,7 @@ while (my $line = <INF>) {
 close(INF);
 
 foreach my $chrom (sort keys %chroms) {
-    print "$chrom\n";
+    print "Processing $chrom:\n";
 
     #####----------SMRT FILE PROCESSING-------------######
     system("awk '\$3==\"$chrom\"' \Q$SMRT_file\E \| sort -k 4,4n > \Q$SMRT_file\E.sorted.temp");
@@ -606,6 +607,8 @@ foreach my $chrom (sort keys %chroms) {
     close(OUT);
 
     system("rm \Q$SMRT_file\E.\Q$chrom\E.ends.bed.illumina_support.bed.temp");
+    
+    print "================================================\n";
 }
 
 #########################
