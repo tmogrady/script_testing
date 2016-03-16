@@ -780,6 +780,17 @@ foreach my $chrom (sort keys %chroms) {
     
 }
 
+system("cat *.CAGE_starts.bed > $CAGE_file.CAGE_starts.bed");
+system("cat *.starts.bedgraph > $CAGE_file.starts.bedgraph");
+system("cat *.SMRT_starts.bed > $SMRT_file.SMRT_starts.bed");
+system("cat *.read_starts.bedgraph > $SMRT_file.read_starts.bedgraph");
+system("cat *.validated_starts.bed > $SMRT_file.validated_starts.bed");
+system("rm $CAGE_file.chr*.CAGE_starts.bed");
+system("rm $CAGE_file.chr*.starts.bedgraph");
+system("rm $SMRT_file.chr*.SMRT_starts.bed");
+system("rm $SMRT_file.chr*.read_starts.bedgraph");
+system("rm $SMRT_file.chr*.validated_starts.bed");
+
 #########################
 sub collapse_bedgraph {
     my ($chrom, $distance_between_peaks) = @_;
