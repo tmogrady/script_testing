@@ -98,6 +98,12 @@ while (my $line = <INF>) {
 
 close(INF);
 
+my @total_ends_found;
+my @novel_ends_found;
+my @SMRT_ends_ann;
+my @ann_ends_found;
+my @ann_ends;
+
 foreach my $chrom (sort keys %chroms) {
     print "Processing $chrom:\n";
 
@@ -587,24 +593,30 @@ foreach my $chrom (sort keys %chroms) {
 
     print "------------------------------------------------\n";
 
-    open(OUT, ">${chrom}_validated_ends_stats.txt");
+    push (@total_ends_found, $total_found);
+    push (@novel_ends_found, $novel_found_by_SMRT_ill);
+    push (@SMRT_ends_ann, $SMRT_annotated);
+    push (@ann_ends_found, $annotated_found_by_SMRT);
+    push (@ann_ends, $annotated);
+    
+    #open(OUT, ">${chrom}_validated_ends_stats.txt");
 
     if ($total_found > 0) {
         if ($SMRT_annotated != $annotated_found_by_SMRT) {
             print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 3' ends are found.\nNote that two annotated ends may be within $ann_dist bp of a single Iso-Seq end or vice versa.\n";
-            print OUT "$chrom\n\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n\t$annotated_found_by_SMRT detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
+            #print OUT "$chrom\n\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n\t$annotated_found_by_SMRT detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
         }
         else {
             print "$total_found 3' ends found. $novel_found_by_SMRT_ill are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 3' ends).\n\n";
-            print OUT "$chrom\n\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
+            #print OUT "$chrom\n\n$total_found 3' ends\n\t$novel_found_by_SMRT_ill novel\n\t$SMRT_annotated annotated\n$annotated 3' ends in annotation\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
         }
     }
     else {
         print "No 3' ends validated\n";
-        print OUT "No validated 3' ends found\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
+        #print OUT "No validated 3' ends found\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
     }
 
-    close(OUT);
+    #close(OUT);
 
     system("rm \Q$SMRT_file\E.\Q$chrom\E.ends.bed.illumina_support.bed.temp");
     
@@ -622,6 +634,34 @@ system("rm $ill_file.chr*.polyA_sites.bedgraph");
 system("rm $SMRT_file.chr*.SMRT_ends.bed");
 system("rm $SMRT_file.chr*.read_ends.bedgraph");
 system("rm $SMRT_file.chr*.validated_ends.bed");
+
+my $sum_total_found = 0;
+my $sum_novel_found = 0;
+my $sum_SMRT_ann = 0;
+my $sum_total_ann = 0;
+my $sum_ann_found = 0;
+
+foreach my $total_ends (@total_ends_found) {
+    $sum_total_found = $sum_total_found + $total_ends;
+}
+foreach my $novel_ends (@novel_ends_found) {
+    $sum_novel_found = $sum_novel_found + $novel_ends;
+}
+foreach my $SMRT_ann (@SMRT_ends_ann) {
+    $sum_SMRT_ann = $sum_SMRT_ann + $SMRT_ann;
+}
+foreach my $total_ann (@ann_ends) {
+    $sum_total_ann = $sum_total_ann + $total_ann;
+}
+foreach my $ann_SMRT (@ann_ends_found) {
+    $sum_ann_found = $sum_ann_found + $ann_SMRT;
+}
+
+open(OUT, ">validated_ends.txt");
+
+print OUT "$sum_total_found 3' ends\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann starts in annotation file\n\t$sum_ann_found detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
+
+close(OUT);
 
 #########################
 sub collapse_bedgraph {
