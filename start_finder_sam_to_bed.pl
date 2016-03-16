@@ -73,7 +73,7 @@ else {
     chomp $ann_dist;
 }
 
-print "------------------------------------------------\n";
+print "================================================\n";
 
 #####----------SMRT FILE CHROMOSOME EXTRACTION-------------######
 
@@ -99,7 +99,7 @@ my @ann_ends_found;
 my @ann_ends;
 
 foreach my $chrom (sort keys %chroms) {
-    print "$chrom\n";
+    print "Processing $chrom:\n";
 
 
     #####----------SMRT FILE PROCESSING-------------######
@@ -790,7 +790,11 @@ foreach my $chrom (sort keys %chroms) {
 
     system("rm \Q$SMRT_file\E.\Q$chrom\E.SMRT_starts.bed.CAGE_support.bed.temp");
     
+    print "================================================\n";
+    
 }
+
+
 
 system("cat *.CAGE_starts.bed > $CAGE_file.CAGE_starts.bed");
 system("cat *.starts.bedgraph > $CAGE_file.starts.bedgraph");
@@ -827,7 +831,7 @@ foreach my $ann_SMRT (@ann_ends_found) {
 
 open(OUT, ">validated_starts.txt");
 
-print OUT "$sum_total_found 5' starts\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann starts in annotation file\n\t$sum_ann_found detected by Iso-Seq";
+print OUT "$sum_total_found 5' starts\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann starts in annotation file\n\t$sum_ann_found detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
 
 close(OUT);
 
