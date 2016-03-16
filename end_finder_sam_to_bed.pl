@@ -85,6 +85,8 @@ print "================================================\n";
 
 open(INF, "<$SMRT_file") or die "couldn't open file";
 
+print "Identifying chromosomes...\n";
+
 my %chroms;
 
 while (my $line = <INF>) {
@@ -97,6 +99,43 @@ while (my $line = <INF>) {
 }
 
 close(INF);
+
+#####----------ILLUMINA POLY(A) TAIL DETECTION-------------######
+
+open(INF, "<$ill_file") or die "couldn't open input file";
+open(OUT, ">$ill_file.polyA_ends.temp") or die "couldn't open output file";
+
+print "Extracting Illumina reads with at least $min_As As and at least $min_softclip mismatches...\n";
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    next if ($cols[0] eq "\@HD" || $cols[0] eq "\@PG" || $cols[0] eq "\@SQ"); #skips SAM file header lines
+    if ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) {  #selects reads with FLAG codes indicating they are first in pair on the plus strand
+        if (($cols[5] =~ m/\d+S$/) and ($cols[9] =~ m/A{$min_As}$/)) { # selects reads with softclipping and a run of As at the end
+            my ($softclips) = $cols[5] =~ m/(\d+)S$/; #pulls out the number of softclipped bases
+            if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
+                print OUT $line, "\n";
+            }
+        }
+    }
+    elsif ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) {  #selects reads with FLAG codes indicating they are first in pair on the minus strand
+        if (($cols[5] =~ m/^\d+S/) and ($cols[9] =~ m/^T{$min_As}/)) { #selects reads with softclipping and a run of Ts at the beginning
+            my ($softclips) = $cols[5] =~ m/^(\d+)S/; #pulls out the number of softclipped bases
+            if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
+                print OUT $line, "\n";
+            }
+        }
+    }
+}
+
+close(INF);
+close(OUT);
+
+system ("sort -k 3,3 -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
+system ("rm \Q$ill_file\E.polyA_ends.temp");
+
+#####----------CHROMOSOME-BY-CHROMOSOME ANALYSIS-------------######
 
 my @total_ends_found;
 my @novel_ends_found;
@@ -235,43 +274,9 @@ foreach my $chrom (sort keys %chroms) {
 
     #####----------ILLUMINA FILE PROCESSING-------------######
 
-    open(INF, "<$ill_file") or die "couldn't open input file";
-    open(OUT, ">$ill_file.polyA_ends.temp") or die "couldn't open output file";
-
-    print "Extracting Illumina reads with at least $min_As As and at least $min_softclip mismatches...\n";
-
-    while (my $line = <INF>) {
-        chomp($line);
-        my @cols = split("\t", $line);
-        next if ($cols[0] eq "\@HD" || $cols[0] eq "\@PG" || $cols[0] eq "\@SQ"); #skips SAM file header lines
-        next if $cols[2] ne $chrom;
-        if ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) {  #selects reads with FLAG codes indicating they are first in pair on the plus strand
-            if (($cols[5] =~ m/\d+S$/) and ($cols[9] =~ m/A{$min_As}$/)) { # selects reads with softclipping and a run of As at the end
-                my ($softclips) = $cols[5] =~ m/(\d+)S$/; #pulls out the number of softclipped bases
-                if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
-                    print OUT $line, "\n";
-                }
-            }
-        }
-        elsif ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) {  #selects reads with FLAG codes indicating they are first in pair on the minus strand
-            if (($cols[5] =~ m/^\d+S/) and ($cols[9] =~ m/^T{$min_As}/)) { #selects reads with softclipping and a run of Ts at the beginning
-                my ($softclips) = $cols[5] =~ m/^(\d+)S/; #pulls out the number of softclipped bases
-                if ($softclips > $min_softclip) { #selects reads with at least the specified number of softclipped bases
-                    print OUT $line, "\n";
-                }
-            }
-        }
-    }
-
-    close(INF);
-    close(OUT);
-
-    system ("sort -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
-    system ("rm \Q$ill_file\E.polyA_ends.temp");
-
     open(INF, "<$ill_file.polyA_ends.sam") or die "couldn't open file";
     open(OUT, ">$ill_file.polyA_sites.temp") or die "couldn't open file";
-
+    
     print "Processing Illumina reads with polyA tails...\n";
     #create a file with the coordinates corresponding to the polyA ends of the reads, and sort it by those coordinates
 
