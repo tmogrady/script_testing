@@ -611,6 +611,18 @@ foreach my $chrom (sort keys %chroms) {
     print "================================================\n";
 }
 
+system("cat *.polyA_sites.bed > $ill_file.polyA_sites.bed");
+system("cat *.polyA_sites.bedgraph > $ill_file.polyA_sites.bedgraph");
+system("cat *.SMRT_ends.bed > $SMRT_file.SMRT_ends.bed");
+system("cat *.read_ends.bedgraph > $SMRT_file.read_ends.bedgraph");
+system("cat *.validated_ends.bed > $SMRT_file.validated_ends.bed");
+
+system("rm $ill_file.chr*.polyA_sites.bed");
+system("rm $ill_file.chr*.polyA_sites.bedgraph");
+system("rm $SMRT_file.chr*.SMRT_ends.bed");
+system("rm $SMRT_file.chr*.read_ends.bedgraph");
+system("rm $SMRT_file.chr*.validated_ends.bed");
+
 #########################
 sub collapse_bedgraph {
     my ($chrom, $distance_between_peaks) = @_;
