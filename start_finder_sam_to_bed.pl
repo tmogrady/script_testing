@@ -92,6 +92,12 @@ while (my $line = <INF>) {
 
 close(INF);
 
+my @total_ends_found;
+my @novel_ends_found;
+my @SMRT_ends_ann;
+my @ann_ends_found;
+my @ann_ends;
+
 foreach my $chrom (sort keys %chroms) {
     print "$chrom\n";
 
@@ -756,25 +762,31 @@ foreach my $chrom (sort keys %chroms) {
     close(OUT);
 
     print "------------------------------------------------\n";
+    
+    push (@total_ends_found, $total_found);
+    push (@novel_ends_found, $novel_found_by_SMRT_CAGE);
+    push (@SMRT_ends_ann, $SMRT_annotated);
+    push (@ann_ends_found, $annotated_found_by_SMRT);
+    push (@ann_ends, $annotated);
 
-    open(OUT, ">${chrom}_validated_starts_stats.txt");
+    #open(OUT, ">${chrom}_validated_starts_stats.txt");
 
     if ($total_found > 0) {
         if ($SMRT_annotated != $annotated_found_by_SMRT) {
             print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated.  $annotated_found_by_SMRT out of $annotated total annotated 5' starts are found.\nNote that two annotated starts may be within $ann_dist bp of a single Iso-Seq start or vice versa.\n";
-            print OUT "$chrom\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\t$annotated_found_by_SMRT detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
+            #print OUT "$chrom\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\t$annotated_found_by_SMRT detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
         }
         else {
             print "$total_found 5' starts found. $novel_found_by_SMRT_CAGE are novel, $SMRT_annotated are annotated (out of a total of $annotated annotated 5' starts).\n";
-            print OUT "$chrom\n\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
+            #print OUT "$chrom\n\n$total_found 5' starts\n\t$novel_found_by_SMRT_CAGE novel\n\t$SMRT_annotated annotated\n$annotated starts in annotation file\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
         }
     }
     else {
         print "No validated starts found.\n";
-        print OUT "No validated starts found.\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
+        #print OUT "No validated starts found.\n\ninput files:\n\t$SMRT_file\n\t$CAGE_file\n\t$ann_file\n";
     }
 
-    close(OUT);
+    #close(OUT);
 
     system("rm \Q$SMRT_file\E.\Q$chrom\E.SMRT_starts.bed.CAGE_support.bed.temp");
     
@@ -790,6 +802,34 @@ system("rm $CAGE_file.chr*.starts.bedgraph");
 system("rm $SMRT_file.chr*.SMRT_starts.bed");
 system("rm $SMRT_file.chr*.read_starts.bedgraph");
 system("rm $SMRT_file.chr*.validated_starts.bed");
+
+my $sum_total_found = 0;
+my $sum_novel_found = 0;
+my $sum_SMRT_ann = 0;
+my $sum_total_ann = 0;
+my $sum_ann_found = 0;
+
+foreach my $total_ends (@total_ends_found) {
+    $sum_total_found = $sum_total_found + $total_ends;
+}
+foreach my $novel_ends (@novel_ends_found) {
+    $sum_novel_found = $sum_novel_found + $novel_ends;
+}
+foreach my $SMRT_ann (@SMRT_ends_ann) {
+    $sum_SMRT_ann = $sum_SMRT_ann + $SMRT_ann;
+}
+foreach my $total_ann (@ann_ends) {
+    $sum_total_ann = $sum_total_ann + $total_ann;
+}
+foreach my $ann_SMRT (@ann_ends_found) {
+    $sum_ann_found = $sum_ann_found + $ann_SMRT;
+}
+
+open(OUT, ">validated_starts.txt");
+
+print OUT "$sum_total_found 5' starts\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann starts in annotation file\n\t$sum_ann_found detected by Iso-Seq";
+
+close(OUT);
 
 #########################
 sub collapse_bedgraph {
