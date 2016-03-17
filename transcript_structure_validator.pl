@@ -274,6 +274,7 @@ close(OUT);
 system("sort -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed");
 system("rm \Q$test_file\E.validated_unrefined.bed.temp");
 
+#refine starts and ends to validated coordinates:
 open(INF, "<$test_file.validated_unrefined.bed");
 open(OUT, ">$test_file.validated_refined.temp");
 
@@ -332,15 +333,13 @@ while (my $line = <INF>) {
     }
 }
 
-#then need to add code to collapse the transcripts with identical structure into a single feature
-
 close(INF);
 close(OUT);
 
 system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
 system("rm \Q$test_file\E.validated_refined.temp");
 
-#Collapsing matching transcripts into single isoforms
+#Collapse matching transcripts into single isoforms:
 
 open(INF, "<$test_file.validated_refined.bed");
 open(OUT, ">$test_file.isoforms.bed");
