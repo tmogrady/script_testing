@@ -137,6 +137,7 @@ if (defined $ig_file) {
     while(my $line = <INF>) {
         chomp($line);
         my @cols = split("\t", $line);
+        next if $cols[0] ne $viral_chr;
         my $ig_coord = "$cols[1]:$cols[2]";
         push (@ig_coords, $ig_coord);
     }
