@@ -56,6 +56,11 @@ close(INF);
 
 print "================================================\n";
 
+my @total_juncs_found;
+my @novel_juncs_found;
+my @ann_juncs_found;
+my @ann_juncs;
+
 foreach my $chrom (sort keys %chroms) {
     print "Processing $chrom:\n";
 
@@ -425,29 +430,34 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
 
     print "------------------------------------------------\n";
+    
+    push(@total_juncs_found, $val_SMRT_count);
+    push(@novel_juncs_found, $nov_SMRT_count);
+    push(@ann_juncs_found, $ann_SMRT_count);
+    push(@ann_juncs, $ann_count);
 
-    open(OUT, ">${chrom}_validated_introns_stats.txt");
+    #open(OUT, ">${chrom}_validated_introns_stats.txt");
 
     if ($val_SMRT_count > 0) {
         print "$val_SMRT_count validated junctions detected in the Iso-Seq file. $nov_SMRT_count are novel and $ann_SMRT_count are annotated (out of $ann_count annotated junctions).\n";
         if (defined $ig_file) {
-            print OUT "$chrom\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
+            #print OUT "$chrom\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
         }
         else {
-            print OUT "$chrom\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n";
+            #print OUT "$chrom\n\n$val_SMRT_count validated junctions\n\t$nov_SMRT_count novel\n\t$ann_SMRT_count annotated\n$ann_count junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n";
         }
     }
     else {
         print "No validated junctions found.\n";
         if (defined $ig_file) {
-            print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
+            #print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
         }
         else{
-            print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file \n";
+            #print OUT "No validated junctions found.\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file \n";
         }
     }
 
-    close(OUT);
+    #close(OUT);
 
     system ("rm \Q$SMRT_jfile\E.\Q$chrom\E.illumina_support.bed.temp");
     
@@ -460,4 +470,32 @@ system("cat *.validated_introns.bed > $SMRT_jfile.validated_introns.bed");
 
 system("rm $SMRT_jfile.chr*");
 system("rm $ill_jfile.chr*");
-#system("rm $SMRT_jfile.chr*");
+
+my $sum_total_found = 0;
+my $sum_novel_found = 0;
+my $sum_ann_found = 0;
+my $sum_total_ann = 0;
+
+
+foreach my $total_juncs (@total_juncs_found) {
+    $sum_total_found = $sum_total_found + $total_juncs;
+}
+foreach my $novel_juncs (@novel_juncs_found) {
+    $sum_novel_found = $sum_novel_found + $novel_juncs;
+}
+foreach my $ann_found (@ann_juncs_found) {
+    $sum_ann_found = $sum_ann_found + $ann_found;
+}
+foreach my $total_ann (@ann_juncs) {
+    $sum_total_ann = $sum_total_ann + $total_ann;
+}
+
+open(OUT, ">validated_introns.txt");
+
+if (defined $ig_file) {
+    print OUT "$sum_total_found validated junctions\n\t$sum_novel_found novel\n\t$sum_ann_found annotated\n$sum_total_ann junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n\t$ig_file\n";
+}
+else {
+    print OUT "$sum_total_found validated junctions\n\t$sum_novel_found novel\n\t$sum_ann_found annotated\n$sum_total_ann junctions in annotation file\n\ninput files:\n\t$SMRT_jfile\n\t$ill_jfile\n\t$ann_file\n";
+}
+close(OUT);
