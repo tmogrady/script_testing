@@ -118,7 +118,7 @@ while (my $line = <INF>) {
 			my @start_cols = split("\t", $valid_start);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
 			if (($chrom eq $start_cols[0]) and ($strand eq $start_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
-				$new_start_line = "$line\t$start_cols[1]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
+				$new_start_line = "$line\t$start_cols[1]"; #creates a line for the read, with an extra column that contains the validated 5' end coordinate
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
                 #print OUT $new_start_line, "\n"; #uncomment to print out file of isoforms with validated starts
                 last;
@@ -130,7 +130,7 @@ while (my $line = <INF>) {
 			my @start_cols = split("\t", $valid_start);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $start_cols[6]);
 			if (($chrom eq $start_cols[0]) and ($strand eq $start_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
-				$new_start_line = "$line\t$start_cols[2]"; #creates a line for the read, changing the start site to the consensus start site and adding an extra field with the original start site
+				$new_start_line = "$line\t$start_cols[2]"; #creates a line for the read, with an extra column that contains the validated 5' end coordinate
 				push (@good_start, $new_start_line); #if the start site matches, pushes the line into a new array of SMRT transcripts with validated 5' ends
                 #print OUT $new_start_line, "\n"; #uncomment to print out file of isoforms with validated starts
                 last;
@@ -171,7 +171,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
-                $new_end_line = "$good_start\t$end_cols[2]";
+                $new_end_line = "$good_start\t$end_cols[2]"; #creates a new line for the read, with extra columns containing the validated 5' and 3' end coordinates
                 push (@good_start_and_end, $new_end_line);
                 #print OUT $new_end_line, "\n"; #uncomment to print out file of isoforms with validated starts and ends
                 last;
@@ -183,7 +183,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
-                $new_end_line = "$chrom\t$chromStart\t$chromEnd\t$name\t$score\t$strand\t$thickStart\t$thickEnd\t$itemRgb\t$blockCount\t$blockSizes\t$blockStarts\t$end_cols[1]\t$new_coord";
+                $new_end_line = "$chrom\t$chromStart\t$chromEnd\t$name\t$score\t$strand\t$thickStart\t$thickEnd\t$itemRgb\t$blockCount\t$blockSizes\t$blockStarts\t$end_cols[1]\t$new_coord"; #creates a new line for the read, with extra columns containing the validated 5' and 3' end coordinates
                 push (@good_start_and_end, $new_end_line);
                 #print OUT $new_end_line, "\n"; #uncomment to print out file of isoforms with validated starts and ends
                 last;
