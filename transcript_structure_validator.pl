@@ -265,13 +265,13 @@ foreach my $good_start_and_end (@good_start_and_end) { #starts with the array of
 
 close(OUT);
 
-#system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start.bed.temp > \Q$test_file\E.valid_start.bed"); #uncomment to print out file of isoforms with validated starts
+#system("sort -k1,1 -k2,2n -k3,3n \Q$test_file\E.valid_start.bed.temp > \Q$test_file\E.valid_start.bed"); #uncomment to print out file of isoforms with validated starts
 #system("rm \Q$test_file\E.valid_start.bed.temp"); #uncomment to print out file of isoforms with validated starts
 
-#system("sort -k 2,2n -k 3,3n \Q$test_file\E.valid_start_and_end.bed.temp > \Q$test_file\E.valid_start_and_end.bed"); #uncomment to print out file of isoforms with validated starts and ends
+#system("sort -k1,1 -k 2,2n -k 3,3n \Q$test_file\E.valid_start_and_end.bed.temp > \Q$test_file\E.valid_start_and_end.bed"); #uncomment to print out file of isoforms with validated starts and ends
 #system("rm \Q$test_file\E.valid_start_and_end.bed.temp"); #uncomment to print out file of isoforms with validated starts and ends
 
-system("sort -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed");
+system("sort -k1,1 -k2,2n -k3,3n \Q$test_file\E.validated_unrefined.bed.temp > \Q$test_file\E.validated_unrefined.bed");
 system("rm \Q$test_file\E.validated_unrefined.bed.temp");
 
 #refine starts and ends to validated coordinates:
@@ -336,7 +336,7 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
-system("sort -k 2,2n -k 3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
+system("sort -k1,1 -k2,2n -k3,3n -k11,11 -k12,12 -k5,5n \Q$test_file\E.validated_refined.temp > \Q$test_file\E.validated_refined.bed");
 system("rm \Q$test_file\E.validated_refined.temp");
 
 #Collapse matching transcripts into single isoforms:
@@ -370,7 +370,7 @@ while(my $line = <INF>) {
 	chomp($line);
 	my @cols = split("\t", $line);
     if ($cols[5] eq "+") {
-        if (($cols[0] eq $prev_chr_plus) and ($cols[1] == $prev_chrStart_plus) and ($cols[2] == $prev_chrEnd_plus) and ($cols[10] eq $prev_blockSizes_plus) and ($cols[11] eq $prev_blockStarts_plus)) {
+        if (($cols[0] eq $prev_chr_plus) and ($cols[1] == $prev_chrStart_plus) and ($cols[2] == $prev_chrEnd_plus) and ($cols[10] eq $prev_blockSizes_plus) and ($cols[11] eq $prev_blockStarts_plus)) { #checks to see if the transcript coordinates match those of the previous transcript. If so, adds to the read count
             $count_plus = $count_plus + $cols[4];
             $prev_chr_plus = $cols[0];
             $prev_name_plus = $cols[3];
@@ -379,7 +379,7 @@ while(my $line = <INF>) {
             
         }
         else {
-            if ($count_plus == 0) {
+            if ($count_plus == 0) { #if the transcript doesn't match the previous transcript, and the read count is zero, this is the first transcript, and values are assigned
                 $prev_chrStart_plus = $cols[1];
                 $prev_chrEnd_plus = $cols[2];
                 $prev_blockSizes_plus = $cols[10];
@@ -391,7 +391,7 @@ while(my $line = <INF>) {
                 $prev_blocks_plus = $cols[9];
             }
             else {
-                print OUT "$prev_chr_plus\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_name_plus\t$count_plus\t\+\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_rgb_plus\t$prev_blocks_plus\t$prev_blockSizes_plus\t$prev_blockStarts_plus\n";
+                print OUT "$prev_chr_plus\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_name_plus\t$count_plus\t\+\t$prev_chrStart_plus\t$prev_chrEnd_plus\t$prev_rgb_plus\t$prev_blocks_plus\t$prev_blockSizes_plus\t$prev_blockStarts_plus\n"; #if the transcript doesn't match the previous transcript and there is a read count, the previous transcript is printed out
                 $iso_count++;
                 $prev_chrStart_plus = $cols[1];
                 $prev_chrEnd_plus = $cols[2];
@@ -406,7 +406,7 @@ while(my $line = <INF>) {
         }
     }
     elsif ($cols[5] eq "-") {
-        if (($cols[0] eq $prev_chr_minus) and ($cols[1] == $prev_chrStart_minus) and ($cols[2] == $prev_chrEnd_minus) and ($cols[10] eq $prev_blockSizes_minus) and ($cols[11] eq $prev_blockStarts_minus)) {
+        if (($cols[0] eq $prev_chr_minus) and ($cols[1] == $prev_chrStart_minus) and ($cols[2] == $prev_chrEnd_minus) and ($cols[10] eq $prev_blockSizes_minus) and ($cols[11] eq $prev_blockStarts_minus)) { #checks to see if the transcript coordinates match those of the previous transcript. If so, adds to the read count
             $count_minus = $count_minus + $cols[4];
             $prev_chr_minus = $cols[0];
             $prev_name_minus = $cols[3];
@@ -415,7 +415,7 @@ while(my $line = <INF>) {
             
         }
         else {
-            if ($count_minus == 0) {
+            if ($count_minus == 0) { #if the transcript doesn't match the previous transcript, and the read count is zero, this is the first transcript, and values are assigned
                 $prev_chrStart_minus = $cols[1];
                 $prev_chrEnd_minus = $cols[2];
                 $prev_blockSizes_minus = $cols[10];
@@ -427,7 +427,7 @@ while(my $line = <INF>) {
                 $prev_blocks_minus = $cols[9];
             }
             else {
-                print OUT "$prev_chr_minus\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_name_minus\t$count_minus\t\-\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_rgb_minus\t$prev_blocks_minus\t$prev_blockSizes_minus\t$prev_blockStarts_minus\n";
+                print OUT "$prev_chr_minus\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_name_minus\t$count_minus\t\-\t$prev_chrStart_minus\t$prev_chrEnd_minus\t$prev_rgb_minus\t$prev_blocks_minus\t$prev_blockSizes_minus\t$prev_blockStarts_minus\n"; #if the transcript doesn't match the previous transcript and there is a read count, the previous transcript is printed out
                 $iso_count++;
                 $prev_chrStart_minus = $cols[1];
                 $prev_chrEnd_minus = $cols[2];
@@ -487,8 +487,9 @@ while (my $line = <INF>) {
         my $val_introns = 0;
         my $ann_introns = 0;
         my @ann_cols = split("\t", $ann);
-        next if ($val_cols[5] ne $ann_cols[5]);
-        next if ($val_cols[9] ne $ann_cols[9]);
+        next if $val_cols[0] ne $ann_cols[0]; #checks chromosome
+        next if ($val_cols[5] ne $ann_cols[5]); #checks strand
+        next if ($val_cols[9] ne $ann_cols[9]); #checks blockCount
         if ($val_cols[5] eq "+") {
             $upper_limit_s = $ann_cols[1] + $start_dist;
             $lower_limit_s = $ann_cols[1] - $start_dist;
