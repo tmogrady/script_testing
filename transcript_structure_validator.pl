@@ -251,6 +251,7 @@ foreach my $good_start_and_end (@good_start_and_end) { #starts with the array of
                 next if $intron_strand ne $valid_coords[5]; #enforces strand matching
 				if (($coords[0] == $valid_coords[1]) and ($coords[1] == $valid_coords[2])) {
 					push(@good_intron_counter, $intron_coord_pair);	#puts introns that are validated for this transcript into an array (this really just functions as a counter)
+                    last;
 				}			
 			}
 		}
