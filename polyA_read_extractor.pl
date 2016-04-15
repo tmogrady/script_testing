@@ -24,7 +24,7 @@ foreach my $file(@files) {
 		
 		next if ($split_line[0] eq "\@HD" || $split_line[0] eq "\@PG" || $split_line[0] eq "\@SQ"); #skips SAM file header lines
 		
-		if ($split_line[1] == 81 || $split_line[1] == 83 || $split_line[1] == 89) {  #selects reads with FLAG codes indicating they are first in pair on the plus strand
+        if ($split_line[1] == 81 || $split_line[1] == 83 || $split_line[1] == 89 || $split_line[1] == 16) {  #selects reads with FLAG codes indicating they are first in pair on the plus strand
 					
 			if (($split_line[5] =~ m/\d+S$/) and ($split_line[9] =~ m/A{$min_As}$/)) { # selects reads with softclipping and a run of As at the end
                 my ($softclips) = $split_line[5] =~ m/(\d+)S$/; #pulls out the number of softclipped bases
@@ -42,7 +42,7 @@ foreach my $file(@files) {
 			else { next; }
 		}
 		
-		elsif ($split_line[1] == 73 || $split_line[1] == 97 || $split_line[1] == 99) {  #selects reads with FLAG codes indicating they are first in pair on the minus strand
+		elsif ($split_line[1] == 73 || $split_line[1] == 97 || $split_line[1] == 99 || $split_line[1] == 0) {  #selects reads with FLAG codes indicating they are first in pair on the minus strand
 					
 			if (($split_line[5] =~ m/^\d+S/) and ($split_line[9] =~ m/^T{$min_As}/)) { #selects reads with softclipping and a run of Ts at the beginning
                 my ($softclips) = $split_line[5] =~ m/^(\d+)S/; #pulls out the number of softclipped bases
