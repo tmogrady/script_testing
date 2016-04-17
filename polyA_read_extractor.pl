@@ -22,7 +22,7 @@ foreach my $file(@files) {
 		
 		my @split_line = split("\t", $line);
 		
-		next if ($split_line[0] eq "\@HD" || $split_line[0] eq "\@PG" || $split_line[0] eq "\@SQ"); #skips SAM file header lines
+		next if ($split_line[0] eq "\@HD" || $split_line[0] eq "\@PG" || $split_line[0] eq "\@SQ" || $split_line[0] eq "\@CO"); #skips SAM file header lines
 		
         if ($split_line[1] == 81 || $split_line[1] == 83 || $split_line[1] == 89 || $split_line[1] == 16) {  #selects reads with FLAG codes indicating they are first in pair on the plus strand
 					
