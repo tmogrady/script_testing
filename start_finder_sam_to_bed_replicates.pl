@@ -3,12 +3,8 @@
 #version of start_finder_sam_to_bed.pl that accepts a file of paraclu clusters created from replicates instead of a single experiment, and reduced to a single-feature weighted average bed file
 #Accepts a SAM file using SMRT fl data, a SAM file using CAGE data, and a bed file of annotated polyadenylated transcripts. Counts the number of non-clipped SMRT reads with 5' starts at each genomic position and estimates consensus locations of clusters of 5' starts. Uses Paraclu to identify clusters of 5' starts in the CAGE data. Output includes bedgraph files of SMRT 5' starts, a bed file of the weighted centers of SMRT start clusters, a bed file of Paraclu-identified CAGE 5' start clusters, and a bed file of SMRT 5' starts supported by the CAGE data, with their annotation status noted.
 
-#SMRT fl read names must be formatted as putative_isoform_id/number_of_reads/length.
-
 #USAGE:
 # perl <PATH/start_finder_sam_to_bed.pl> </PATH/SMRT_sam_file> </PATH/CAGE_file> </PATH/Annotation_bed_file>
-
-#TO'G 9/11/2015
 
 use warnings;
 use strict;
