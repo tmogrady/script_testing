@@ -291,7 +291,7 @@ sub weakest_suffix {
 close(INF);
 close(OUT);
 
-system("sort -k2,2 -k3,3n -k4,4rn \Q$file\E.paraclu.txt.temp > \Q$file\E.paraclu.txt");
+system("sort -k2,2 -k1,1 -k3,3n -k4,4rn \Q$file\E.paraclu.txt.temp > \Q$file\E.paraclu.txt");
 system("rm \Q$file\E.paraclu.txt.temp");
 
 #####----------PROCESSING PARACLU OUTPUT-------------######
@@ -303,6 +303,7 @@ my $length;
 my $dens;
 my $prev_start = 0;
 my $prev_end = 0;
+my $prev_chrom = "start";
 
 open(INF, "<$file.paraclu.txt") or die "couldn't open file";
 open(OUT, ">$file.peaks.$min_tags.$min_dens.$min_length.$max_length.bed") or die "couldn't open file";
@@ -316,7 +317,7 @@ while (my $line = <INF>) {
     if (($length >= $min_length) and ($length <= $max_length)) {
         $dens = $cols[7] / $cols[6];
         if ($dens >= $min_dens) {
-            next if (($cols[2] >= $prev_start) and ($cols[2] <= $prev_end));
+            next if (($cols[0] eq $prev_chrom) and ($cols[2] >= $prev_start) and ($cols[2] <= $prev_end));
             if ($dens < 100) { #keep everything one-based (like sam) for now; will convert to zero-based in next step
                 printf OUT "%s\t%d\t%d\t%d%s%.1f\t%d\t%s\n", $cols[0], $cols[2], $cols[3], $cols[5], ":", $dens, $cols[5], $cols[1];   #limits the density output to 1 decimal place, but doesn't change huge numbers to exponents
             }
@@ -325,6 +326,7 @@ while (my $line = <INF>) {
             }
             $prev_start = $cols[2];
             $prev_end = $cols[3];
+            $prev_chrom = $cols[0];
         }
     }
 }
@@ -333,6 +335,9 @@ close(OUT);
 
 #getting weighted averages of Paraclu peaks:
 
+print "Calculating weighted averages of CAGE clusters\n";
+
+my $chrom_CAGE;
 my $rangeStart_CAGE;
 my $rangeEnd_CAGE;
 my $strand_CAGE;
@@ -345,6 +350,7 @@ open(OUT, ">$file.peaks_weighted_average.bed") or die "couldn't open file"; #lat
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
+    $chrom_CAGE = $cols[0];
     $rangeStart_CAGE = $cols[1];
     $rangeEnd_CAGE = $cols[2];
     $strand_CAGE = $cols[5];
@@ -352,7 +358,7 @@ while (my $line = <INF>) {
     while (my $line2 = <INF2>) {
         chomp($line2);
         my @cols2 = split("\t", $line2);
-        if ((($cols2[2]) >= $rangeStart_CAGE) and (($cols2[2]) <= $rangeEnd_CAGE) and ($cols2[1] eq $strand_CAGE)) {
+        if (($cols2[2] >= $rangeStart_CAGE) and ($cols2[2] <= $rangeEnd_CAGE) and ($cols2[1] eq $strand_CAGE) and ($cols2[0] eq $chrom_CAGE)) {
             $CAGE_weighted_sum = $CAGE_weighted_sum + ($cols2[2]*$cols2[3]);
         }
     }
