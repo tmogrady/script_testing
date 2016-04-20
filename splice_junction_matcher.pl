@@ -465,7 +465,15 @@ foreach my $chrom (sort keys %chroms) {
 }
 
 system("cat $SMRT_jfile.chr*.bed > $SMRT_jfile.introns.bed");
-system("cat $ill_jfile*.no_ignored.bed > $ill_jfile.introns.bed");
+
+if (defined $ig_file) {
+    system("cat $ill_jfile*.no_ignored.bed > $ill_jfile.introns.bed");
+}
+else {
+    system("cat $ill_jfile*.bed > $ill_jfile.introns.bed");
+}
+
+
 system("cat *.validated_introns.bed > $SMRT_jfile.validated_introns.bed");
 
 system("rm $SMRT_jfile.chr*");
