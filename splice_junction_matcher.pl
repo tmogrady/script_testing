@@ -470,7 +470,7 @@ if (defined $ig_file) {
     system("cat $ill_jfile*.no_ignored.bed > $ill_jfile.introns.bed");
 }
 else {
-    system("cat $ill_jfile*.bed > $ill_jfile.introns.bed");
+    system("cat $ill_jfile.chr*.bed > $ill_jfile.introns.bed");
 }
 
 
