@@ -51,3 +51,4 @@ close(INF);
 close(OUT);
 
 system("sort -k1,1 -k2,3n overlap.temp > overlap.bed");
+system("rm overlap.temp");
