@@ -17,7 +17,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     next if ($cols[0] eq "ID");
-    print OUT "$cols[3]\t$cols[5]\t$cols[6]\t$cols[1]\:$cols[18]\:$cols[19]\:$cols[22]\t$cols[4]\n";
+    print OUT "$cols[3]\t$cols[5]\t$cols[6]\t$cols[1]\:$cols[18]\:$cols[19]\:$cols[22]\t$cols[22]\t$cols[4]\n";
 }
 
 close(INF);
