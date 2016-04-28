@@ -10,7 +10,7 @@
 use warnings;
 use strict;
 
-my ($dist, $chr, $file1, $file2, $file3, $file4) = @ARGV;
+my ($dist, $file1, $file2, $file3, $file4) = @ARGV;
 my %peaks;
 
 open(INF, "<$file1");
@@ -24,14 +24,14 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
-    next if ($cols[0] ne $chr);
+    #next if ($cols[0] ne $chr);
     if ($cols[5] eq "+") {
-        $coord_key = "$cols[1]\:$cols[5]"; #creates a key for the hash with chrStart and strand
+        $coord_key = "$cols[0]\:$cols[1]\:$cols[5]"; #creates a key for the hash with chr, chrStart and strand
         $values = "$cols[4]\:$subcols[3]\:1"; #creates a value for the hash with tag count, relative density and replicate count
         $peaks{$coord_key} = $values;
     }
     if ($cols[5] eq "-") {
-        $coord_key = "$cols[2]\:$cols[5]"; #creates a key for the hash with chrEnd and strand
+        $coord_key = "$cols[0]\:$cols[2]\:$cols[5]"; #creates a key for the hash with chrEnd and strand
         $values = "$cols[4]\:$subcols[3]\:1"; #creates a value for the hash with tag count, relative density and replicate count
         $peaks{$coord_key} = $values;
     }
@@ -53,7 +53,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
-    next if ($cols[0] ne $chr);
+    #next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -64,15 +64,15 @@ while(my $line = <INF>) {
     my $lower_limit = $file_start - $dist;
     my $upper_limit = $file_start + $dist;
     foreach my $hash_start (keys %peaks) {
-        my ($coord, $strand) = split("\:", $hash_start);
-        if (($coord >= $lower_limit) and ($coord <= $upper_limit)) { #checks to see if the cluster is already in the hash (from an earlier file)
+        my ($hash_chr, $coord, $strand) = split("\:", $hash_start);
+        if (($hash_chr eq $cols[0]) and (($coord >= $lower_limit) and ($coord <= $upper_limit))) { #checks to see if the cluster is already in the hash (from an earlier file)
             my @hashcols = split("\:", $peaks{$hash_start}); #extracts information about the cluster from the hash
             my $depth = $cols[4] + $hashcols[0]; #adds tag depths from the current file and the hash
             my $reps = $hashcols[2]+1; #adds one to the replicate count
             my $density = (($subcols[3] + ($hashcols[1]*$hashcols[2]))/($hashcols[2]+1));
             my $new_start = (($coord*$hashcols[0]) + ($file_start*$cols[4]))/($hashcols[0] + $cols[4]);
 
-            $coord_key = "$new_start\:$cols[5]";
+            $coord_key = "$cols[0]\:$new_start\:$cols[5]";
             $values = "$depth\:$density\:$reps";
             delete $peaks{$hash_start};
             $peaks{$coord_key} = $values;
@@ -81,12 +81,14 @@ while(my $line = <INF>) {
         }
     }
     if ($found_flag == 0) {
-        $coord_key = "$file_start\:$cols[5]";
+        $coord_key = "$cols[0]\:$file_start\:$cols[5]";
         $values = "$cols[4]\:$subcols[3]\:1";
         $peaks{$coord_key} = $values; #adds the coordinate to the hash as a key, with the value assigned above as a value
     }
     
 }
+
+close(INF);
 
 open(INF, "<$file3");
 
@@ -96,7 +98,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
-    next if ($cols[0] ne $chr);
+    #next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -107,15 +109,15 @@ while(my $line = <INF>) {
     my $lower_limit = $file_start - $dist;
     my $upper_limit = $file_start + $dist;
     foreach my $hash_start (keys %peaks) {
-        my ($coord, $strand) = split("\:", $hash_start);
-        if (($coord >= $lower_limit) and ($coord <= $upper_limit)) { #checks to see if the cluster is already in the hash (from an earlier file)
+        my ($hash_chr, $coord, $strand) = split("\:", $hash_start);
+        if (($hash_chr eq $cols[0]) and (($coord >= $lower_limit) and ($coord <= $upper_limit))) { #checks to see if the cluster is already in the hash (from an earlier file)
             my @hashcols = split("\:", $peaks{$hash_start}); #extracts information about the cluster from the hash
             my $depth = $cols[4] + $hashcols[0]; #adds tag depths from the current file and the hash
             my $reps = $hashcols[2]+1; #adds one to the replicate count
             my $density = (($subcols[3] + ($hashcols[1]*$hashcols[2]))/($hashcols[2]+1));
             my $new_start = (($coord*$hashcols[0]) + ($file_start*$cols[4]))/($hashcols[0] + $cols[4]);
             
-            $coord_key = "$new_start\:$cols[5]";
+            $coord_key = "$cols[0]\:$new_start\:$cols[5]";
             $values = "$depth\:$density\:$reps";
             delete $peaks{$hash_start};
             $peaks{$coord_key} = $values;
@@ -124,12 +126,14 @@ while(my $line = <INF>) {
         }
     }
     if ($found_flag == 0) {
-        $coord_key = "$file_start\:$cols[5]";
+        $coord_key = "$cols[0]\:$file_start\:$cols[5]";
         $values = "$cols[4]\:$subcols[3]\:1";
         $peaks{$coord_key} = $values; #adds the coordinate to the hash as a key, with the value assigned above as a value
     }
     
 }
+
+close(INF);
 
 open(INF, "<$file4");
 
@@ -139,7 +143,7 @@ while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
-    next if ($cols[0] ne $chr);
+    #next if ($cols[0] ne $chr);
     my $found_flag = 0;
     if ($cols[5] eq "+") {
         $file_start = $cols[1];
@@ -150,15 +154,15 @@ while(my $line = <INF>) {
     my $lower_limit = $file_start - $dist;
     my $upper_limit = $file_start + $dist;
     foreach my $hash_start (keys %peaks) {
-        my ($coord, $strand) = split("\:", $hash_start);
-        if (($coord >= $lower_limit) and ($coord <= $upper_limit)) { #checks to see if the cluster is already in the hash (from an earlier file)
+        my ($hash_chr, $coord, $strand) = split("\:", $hash_start);
+        if (($hash_chr eq $cols[0]) and (($coord >= $lower_limit) and ($coord <= $upper_limit))) { #checks to see if the cluster is already in the hash (from an earlier file)
             my @hashcols = split("\:", $peaks{$hash_start}); #extracts information about the cluster from the hash
             my $depth = $cols[4] + $hashcols[0]; #adds tag depths from the current file and the hash
             my $reps = $hashcols[2]+1; #adds one to the replicate count
             my $density = (($subcols[3] + ($hashcols[1]*$hashcols[2]))/($hashcols[2]+1));
             my $new_start = (($coord*$hashcols[0]) + ($file_start*$cols[4]))/($hashcols[0] + $cols[4]);
             
-            $coord_key = "$new_start\:$cols[5]";
+            $coord_key = "$cols[0]\:$new_start\:$cols[5]";
             $values = "$depth\:$density\:$reps";
             delete $peaks{$hash_start};
             $peaks{$coord_key} = $values;
@@ -167,12 +171,14 @@ while(my $line = <INF>) {
         }
     }
     if ($found_flag == 0) {
-        $coord_key = "$file_start\:$cols[5]";
+        $coord_key = "$cols[0]\:$file_start\:$cols[5]";
         $values = "$cols[4]\:$subcols[3]\:1";
         $peaks{$coord_key} = $values; #adds the coordinate to the hash as a key, with the value assigned above as a value
     }
     
 }
+
+close(INF);
 
 open(OUT, ">any_replicate.temp");
 open(OUT2, ">two_replicates.temp");
@@ -185,8 +191,9 @@ my $chrEnd;
 my $out_line;
 
 foreach my $hash_start (sort keys %peaks) {
-    my ($coord, $strand) = split("\:", $hash_start);
+    my ($chr, $coord, $strand) = split("\:", $hash_start);
     my @hashcols = split("\:", $peaks{$hash_start});
+    #print "$chr\t$coord\t$strand\n";
     if ($strand eq "+") {
         $chrStart = sprintf("%1.0f", $coord);
         $chrEnd = $chrStart + 1;
@@ -212,11 +219,11 @@ foreach my $hash_start (sort keys %peaks) {
     }
 }
 
-system("sort -k 2n any_replicate.temp > any_replicate.bed");
-system("sort -k 2n two_replicates.temp > two_replicates.bed");
-system("sort -k 2n three_replicates.temp > three_replicates.bed");
-system("sort -k 2n four_replicates.temp > four_replicates.bed");
-system("sort -k 2n weird_replicates.temp > weird_replicates.bed");
+system("sort -k1,1 -k2n any_replicate.temp > any_replicate.bed");
+system("sort -k1,1 -k2n two_replicates.temp > two_replicates.bed");
+system("sort -k1,1 -k2n three_replicates.temp > three_replicates.bed");
+system("sort -k1,1 -k2n four_replicates.temp > four_replicates.bed");
+system("sort -k1,1 -k2n weird_replicates.temp > weird_replicates.bed");
 
 system("rm any_replicate.temp");
 system("rm two_replicates.temp");
