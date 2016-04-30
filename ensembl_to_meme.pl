@@ -25,6 +25,7 @@ while (my $line = <INF>) {
     else {
         next if ($line eq "Sequence unavailable");
         my $length = length ($line);
+        next if ($length < 9);
         #print $name, "\t", $length, "\n";
         if (exists $features{$name}) {
             if ($length > (length $features{$name})) {
