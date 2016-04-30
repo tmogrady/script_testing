@@ -185,7 +185,7 @@ foreach my $chrom (sort keys %chroms) {
 
     system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp > \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
 
-    system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$viral_chr\E.all_read_starts.bedgraph.noheader");
+    system("cat \Q$SMRT_file\E.sorted.plus.sam.read_starts.bedgraph \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$chrom\E.all_read_starts.bedgraph.noheader");
 
     system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph.temp");
     system("rm \Q$SMRT_file\E.sorted.minus.sam.read_starts.bedgraph");
