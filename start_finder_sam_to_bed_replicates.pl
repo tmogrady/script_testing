@@ -422,21 +422,17 @@ foreach my $chrom (sort keys %chroms) {
     }
 
 
-    system("rm \Q$SMRT_file\E.\Q$chrom\E.starts.bed.CAGE_support.bed.temp\E");
+    system("rm \Q$SMRT_file\E.\Q$chrom\E.starts.bed.CAGE_support.bed.temp");
 
     print "================================================\n";
     
 }
 
-system("cat *.CAGE_starts.bed > $CAGE_file.CAGE_starts.bed");
-system("cat *.starts.bedgraph > $CAGE_file.starts.bedgraph");
-system("cat *.SMRT_starts.bed > $SMRT_file.SMRT_starts.bed");
-system("cat *.read_starts.bedgraph > $SMRT_file.read_starts.bedgraph");
-system("cat *.validated_starts.bed > $SMRT_file.validated_starts.bed");
-system("rm $CAGE_file.chr*.CAGE_starts.bed");
-system("rm $CAGE_file.chr*.starts.bedgraph");
-system("rm $SMRT_file.chr*.SMRT_starts.bed");
-system("rm $SMRT_file.chr*.read_starts.bedgraph");
+system("cat *.chr*.starts.bed > $SMRT_file.starts.bed");
+system("cat *.chr*.all_read_starts.bedgraph > $SMRT_file.read_starts.bedgraph");
+system("cat *.chr*.validated_starts.bed > $SMRT_file.validated_starts.bed");
+system("rm $SMRT_file.chr*.starts.bed");
+system("rm $SMRT_file.chr*.all_read_starts.bedgraph");
 system("rm $SMRT_file.chr*.validated_starts.bed");
 
 my $sum_total_found = 0;
