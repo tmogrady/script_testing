@@ -3,12 +3,35 @@
 use warnings;
 use strict;
 
-my ($regex, $string) = @ARGV;
+my ($regex, $file) = @ARGV;
 
-my @pos = match_all_positions($regex, $string);
-#my @pos2 = match_positions($regex, $string);
+open (INF, "<$file");
+my $flag = 0;
 
-print "\nmatch all @pos\n\n";
+while (my $line = <INF>) {
+    chomp($line);
+    #next if ($line eq "Sequence unavailable");
+    if ($line =~ m/^\>/) {
+        my @cols = split(/\|/, $line);
+        if ($cols[4]){
+            my $gene = "$cols[1]:$cols[2]";
+            my $chr = $cols[3];
+            my $UTR_start = $cols[4];
+            $flag = 0;
+            print "$gene\t$chr\t$UTR_start\n";
+        }
+        else {
+            $flag = 1;
+        }
+    }
+    else {
+        next if ($flag == 1);
+        my @pos = match_all_positions($regex, $line);
+        print "@pos\n";
+    }
+}
+
+close(INF);
 
 sub match_all_positions {
     my ($regex, $string) = @_;
