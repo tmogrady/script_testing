@@ -7,6 +7,7 @@ my ($regex, $file) = @ARGV;
 
 open (INF, "<$file");
 my $flag = 0;
+my $UTR_start;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -16,7 +17,7 @@ while (my $line = <INF>) {
         if ($cols[4]){
             my $gene = "$cols[1]:$cols[2]";
             my $chr = $cols[3];
-            my $UTR_start = $cols[4];
+            $UTR_start = $cols[4];
             $flag = 0;
             print "$gene\t$chr\t$UTR_start\n";
         }
@@ -28,6 +29,10 @@ while (my $line = <INF>) {
         next if ($flag == 1);
         my @pos = match_all_positions($regex, $line);
         print "@pos\n";
+        foreach my $start (@pos) {
+            my $coord = $start + $UTR_start;
+            print "$coord\n";
+        }
     }
 }
 
