@@ -8,7 +8,6 @@ my ($regex, $file) = @ARGV;
 open (INF, "<$file");
 my $flag = 0;
 my $exon;
-#my @UTR;
 my @UTR_starts;
 my @UTR_ends;
 
@@ -22,14 +21,8 @@ while (my $line = <INF>) {
             if ($cols[4] =~ /;/) { #determines if the UTR is spliced
                 @UTR_starts = split(";", $cols[4]); #extracts start positions of each UTR block
                 @UTR_ends = split(";", $cols[5]); #extracts end positions of each UTR block
-                #for (my $i = 0; $i < scalar @starts; $i = $i + 1) { #goes through each UTR block, joining the start and end coordinates, and adds the joined coordinates to an array
-                    #$exon = "$starts[$i]:$ends[$i]";
-                    #push (@UTR, $exon);
-                #}
             }
-            else { #if the UTR is not spliced, can just put the start and end coordinates in the array (which will have length 1)
-                #$exon = "$cols[4]:$cols[5]";
-                #push (@UTR, $exon);
+            else { #if the UTR is not spliced, can just put the start and end coordinates in their arrays (which will have length 1)
                 push (@UTR_starts, $cols[4]);
                 push (@UTR_ends, $cols[5]);
             }
@@ -46,22 +39,20 @@ while (my $line = <INF>) {
         print "@pos\n";
         foreach my $motif_start (@pos) {
         my $c_exon_size = 0;
-            for (my $i = 0; $i < scalar @UTR_starts; $i = $i + 1) {
-                my $temp_coord = $motif_start - $c_exon_size + $UTR_starts[$i];
+            for (my $i = 0; $i < scalar @UTR_starts; $i = $i + 1) { #goes through the set of exons
+                my $temp_coord = $motif_start - $c_exon_size + $UTR_starts[$i]; #calculates a temporary coordinate for the motif, assuming there is not splice junction
                 print "UTR_start: $UTR_starts[$i]\n";
                 print "temp_coord: $temp_coord\n";
-                if ($temp_coord < $UTR_ends[$i]) {
+                if ($temp_coord < $UTR_ends[$i]) { #checks to see if the coordinate is in the exon
                     print "success: $temp_coord\n\n";
                     last;
                 }
                 else {
-                    $c_exon_size = $c_exon_size + $UTR_ends[$i] - $UTR_starts[$i];
+                    $c_exon_size = $c_exon_size + $UTR_ends[$i] - $UTR_starts[$i]; #if the coordinate is not in the exon, adds the exon size to the cumulative exon size
                     print "c_exon_size: $c_exon_size\n";
                 }
                 
             }
-            #my $coord = $start + $UTR_start[0];
-            #print "$coord\n";
         }
         @UTR_starts = ();
         @UTR_ends = ();
