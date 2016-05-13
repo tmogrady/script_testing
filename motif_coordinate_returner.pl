@@ -6,18 +6,25 @@ use strict;
 my ($regex, $file) = @ARGV;
 
 open (INF, "<$file");
+open (OUT, ">$file.$regex.temp");
+
 my $flag = 0;
+my $name;
+my $chr;
 my $exon;
 my @UTR_starts;
 my @UTR_ends;
+my $chrStart;
+my $chrEnd;
+my $motif_length = length($regex); #this probably doesn't work for a lot of regexes
 
 while (my $line = <INF>) {
     chomp($line);
     if ($line =~ m/^\>/) { #determines if this is a header line
         my @cols = split(/\|/, $line);
         if ($cols[4]){ #checks to see if there is coordinate information for a UTR
-            my $gene = "$cols[1]:$cols[2]"; #creates an identifier with the transcript ID and the gene name
-            my $chr = $cols[3];
+            $name = "$cols[1]:$cols[2]"; #creates an identifier with the transcript ID and the gene name
+            $chr = $cols[3];
             if ($cols[4] =~ /;/) { #determines if the UTR is spliced
                 @UTR_starts = split(";", $cols[4]); #extracts start positions of each UTR block
                 @UTR_ends = split(";", $cols[5]); #extracts end positions of each UTR block
@@ -27,7 +34,7 @@ while (my $line = <INF>) {
                 push (@UTR_ends, $cols[5]);
             }
             $flag = 0; #signals that everything is ok
-            print "$gene\t$chr\t$UTR_starts[0]\n";
+            print "$name\t$chr\t$UTR_starts[0]\n";
         }
         else {
             $flag = 1; #signals that coordinate information for the UTR is missing: need to skip the "sequence" on the next line
@@ -45,6 +52,10 @@ while (my $line = <INF>) {
                 print "temp_coord: $temp_coord\n";
                 if ($temp_coord < $UTR_ends[$i]) { #checks to see if the coordinate is in the exon
                     print "success: $temp_coord\n\n";
+                    $chrStart = $temp_coord - 1; #convert to 0-based for bed
+                    $chrEnd = $chrStart + $motif_length;
+                    print "$chr\t$chrStart\t$chrEnd\t$name\n";
+                    print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
                     last;
                 }
                 else {
@@ -60,6 +71,9 @@ while (my $line = <INF>) {
 }
 
 close(INF);
+close(OUT);
+
+system("sort -k1 -k2,3n $file.$regex.temp | uniq > $file.$regex.bed" ); #can get duplicates because of transcripts. Want to change this or not?
 
 sub match_all_positions {
     my ($regex, $string) = @_;
