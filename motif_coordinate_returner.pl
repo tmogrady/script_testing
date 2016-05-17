@@ -40,7 +40,7 @@ while (my $line = <INF>) {
                 push (@UTR_ends, $cols[5]);
             }
             $flag = 0; #signals that everything is ok
-            #print "$name\t$chr\t$UTR_starts[0]\n";
+            print "$name\t$chr\t$UTR_starts[0]\n";
         }
         else {
             $flag = 1; #signals that coordinate information for the UTR is missing: need to skip the "sequence" on the next line
@@ -49,7 +49,7 @@ while (my $line = <INF>) {
     else { #if it isn't a header line, it's a sequence line
         next if ($flag == 1); #if there wasn't coordinate information on the line above, need to skip this line
         my @pos = match_all_positions($regex, $line); #uses subroutine to create an array of start positions, relative to the sequence, of the regex motif
-        #print "@pos\n";
+        print "@pos\n";
         @sorted_UTR_starts = sort { $a <=> $b } @UTR_starts;
         @sorted_UTR_ends = sort { $a <=> $b } @UTR_ends;
         foreach my $motif_start (@pos) {
@@ -57,52 +57,38 @@ while (my $line = <INF>) {
             if ($strand == 1) {
                 for (my $i = 0; $i < scalar @sorted_UTR_starts; $i = $i + 1) { #goes through the set of exons
                     my $temp_coord = $motif_start - $c_exon_size + $sorted_UTR_starts[$i]; #calculates a temporary coordinate for the motif, assuming there is not a splice junction
-                    #print "UTR_start: $sorted_UTR_starts[$i]\n";
-                    #print "temp_coord: $temp_coord\n";
+                    print "UTR_start: $sorted_UTR_starts[$i]\n";
+                    print "temp_coord: $temp_coord\n";
                     if ($temp_coord < $sorted_UTR_ends[$i]) { #checks to see if the coordinate is in the exon
-                        #print "success: $temp_coord\n\n";
+                        print "success: $temp_coord\n\n";
                         $chrStart = $temp_coord - 1; #convert to 0-based for bed
                         $chrEnd = $chrStart + $motif_length;
-                        #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
+                        print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
                         print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
-                        $coord_key = "$chr\t$chrStart\t$chrEnd";
-                        if (exists $dup_remover{$coord_key}) {
-                            next;
-                        }
-                        else {
-                            $dup_remover{$coord_key} = $name;
-                        }
                         last;
                     }
                     else {
                         $c_exon_size = $c_exon_size + $sorted_UTR_ends[$i] - $sorted_UTR_starts[$i] + 1; #if the coordinate is not in the exon, adds the exon size to the cumulative exon size. Plus one to account for 1-based
-                        #print "c_exon_size: $c_exon_size\n";
+                        print "c_exon_size: $c_exon_size\n";
                     }
                 }
             }
             elsif ($strand == -1) { #detects genes on the negative strand
                 for (my $i = (scalar @sorted_UTR_starts)-1; $i >= 0; $i = $i - 1) { #goes through the set of exons, starting with the last one
                     my $temp_coord = $sorted_UTR_ends[$i] - $c_exon_size - $motif_start; #calculates a temporary coordinate for the motif, assuming there is not splice junction
-                    #print "UTR_start: $sorted_UTR_ends[$i]\n";
-                    #print "temp_coord: $temp_coord\n";
+                    print "UTR_start: $sorted_UTR_ends[$i]\n";
+                    print "temp_coord: $temp_coord\n";
                     if ($temp_coord > $sorted_UTR_starts[$i]) { #checks to see if the coordinate is in the exon
-                        #print "success: $temp_coord\n\n";
+                        print "success: $temp_coord\n\n";
                         $chrEnd = $temp_coord;
                         $chrStart = $chrEnd - $motif_length;
-                        #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
+                        print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
                         print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
-                        $coord_key = "$chr\t$chrStart\t$chrEnd";
-                        if (exists $dup_remover{$coord_key}) {
-                            next;
-                        }
-                        else {
-                            $dup_remover{$coord_key} = $name;
-                        }
                         last;
                     }
                     else {
                         $c_exon_size = $c_exon_size + $sorted_UTR_ends[$i] - $sorted_UTR_starts[$i] + 1; #if the coordinate is not in the exon, adds the exon size to the cumulative exon size. Plus one to account for 1-based
-                        #print "c_exon_size: $c_exon_size\n";
+                        print "c_exon_size: $c_exon_size\n";
                     }
                     
                 }
@@ -122,12 +108,26 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
+open(INF, "<$file.$regex.temp");
 open(OUT, ">$file.$regex.unique.temp");
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    $coord_key = "$cols[0]\t$cols[1]\t$cols[2]";
+    if (exists $dup_remover{$coord_key}) {
+        next;
+    }
+    else {
+        $dup_remover{$coord_key} = $cols[3];
+    }
+}
 
 foreach my $key (keys %dup_remover) {
     print OUT "$key\t$dup_remover{$key}\n";
 }
 
+close(INF);
 close(OUT);
 
 system("sort -k1 -k2,3n $file.$regex.temp > $file.$regex.bed" );
