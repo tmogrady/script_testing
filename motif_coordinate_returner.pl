@@ -20,6 +20,8 @@ my @sorted_UTR_ends;
 my $chrStart;
 my $chrEnd;
 my $motif_length = length($regex); #this probably doesn't work for a lot of regexes
+my $coord_key;
+my %dup_remover;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -63,6 +65,13 @@ while (my $line = <INF>) {
                         $chrEnd = $chrStart + $motif_length;
                         #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
                         print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
+                        $coord_key = "$chr\t$chrStart\t$chrEnd";
+                        if (exists $dup_remover{$coord_key}) {
+                            next;
+                        }
+                        else {
+                            $dup_remover{$coord_key} = $name;
+                        }
                         last;
                     }
                     else {
@@ -82,6 +91,13 @@ while (my $line = <INF>) {
                         $chrStart = $chrEnd - $motif_length;
                         #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
                         print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
+                        $coord_key = "$chr\t$chrStart\t$chrEnd";
+                        if (exists $dup_remover{$coord_key}) {
+                            next;
+                        }
+                        else {
+                            $dup_remover{$coord_key} = $name;
+                        }
                         last;
                     }
                     else {
@@ -106,8 +122,18 @@ while (my $line = <INF>) {
 close(INF);
 close(OUT);
 
-system("sort -k1 -k2,3n $file.$regex.temp | uniq > $file.$regex.bed" ); #can get duplicates because of transcripts. Want to change this or not?
+open(OUT, ">$file.$regex.unique.temp");
+
+foreach my $key (keys %dup_remover) {
+    print OUT "$key\t$dup_remover{$key}\n";
+}
+
+close(OUT);
+
+system("sort -k1 -k2,3n $file.$regex.temp > $file.$regex.bed" );
 system("rm $file.$regex.temp");
+system("sort -k1 -k2,3n $file.$regex.unique.temp > $file.$regex.unique.bed" );
+system("rm $file.$regex.unique.temp");
 
 sub match_all_positions {
     my ($regex, $string) = @_;
