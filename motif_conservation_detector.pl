@@ -1,12 +1,14 @@
 # !/usr/bin/perl
 
+#usage: perl <script.pl> <MAF file> <BED file used to generate MAF file>
+
 use warnings;
 use strict;
 
-my ($file) = @ARGV;
+my ($file, $file2) = @ARGV;
 
 open (INF, "<$file");
-open (OUT, ">$file.conservation.bed");
+open (OUT, ">$file.conservation.temp");
 
 my $chr;
 my $chrStart;
@@ -81,6 +83,39 @@ while (my $line = <INF>) {
 
 print "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
 print OUT "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
+
+close (INF);
+close (OUT);
+
+my %coords_names;
+
+open (INF, "<$file2");
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    my $coord = "$cols[0]\t$cols[1]";
+    $coords_names{$coord} = $cols[3];
+}
+
+close (INF);
+
+foreach my $key (keys %coords_names) {
+    print "$key\t$coords_names{$key}\n";
+}
+
+open (INF, "<$file.conservation.temp");
+open (OUT, ">$file.conservation.bed");
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    my $coord_check = "$cols[0]\t$cols[1]";
+    if (exists $coords_names{$coord_check}) {
+        print OUT "$line\t$coords_names{$coord_check}\n";
+    }
+}
+
 
 close (INF);
 close (OUT);
