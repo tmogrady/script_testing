@@ -64,7 +64,7 @@ while (my $line = <INF>) {
                         $chrStart = $temp_coord - 1; #convert to 0-based for bed
                         $chrEnd = $chrStart + $motif_length;
                         #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
-                        print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
+                        print OUT "chr$chr\t$chrStart\t$chrEnd\t$name\n";
                         last;
                     }
                     else {
@@ -83,7 +83,7 @@ while (my $line = <INF>) {
                         $chrEnd = $temp_coord;
                         $chrStart = $chrEnd - $motif_length;
                         #print "$chr\t$chrStart\t$chrEnd\t$name\n\n";
-                        print OUT "$chr\t$chrStart\t$chrEnd\t$name\n";
+                        print OUT "chr$chr\t$chrStart\t$chrEnd\t$name\n";
                         last;
                     }
                     else {
