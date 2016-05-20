@@ -9,6 +9,7 @@ my ($file, $file2) = @ARGV;
 
 open (INF, "<$file");
 open (OUT, ">$file.conservation.temp");
+open (OUT2, ">$file.temp.bed");
 
 my $chr;
 my $chrStart;
@@ -28,8 +29,8 @@ while (my $line = <INF>) {
         #print "$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]\t$cols[4]\t$cols[5]\t$cols[6]\n";
         if ($cols[1] =~ /hg19/) {
             if ($first == 1) {
-                print "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
-                print OUT "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
+                print OUT "$chr\t$chrStart\t$chrEnd\t$hg19\t$mm10\t$rn5\t$canFam3\t$galGal4\n";
+                print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
                 $mm10 = 0;
                 $rn5 = 0;
                 $canFam3 = 0;
@@ -81,11 +82,12 @@ while (my $line = <INF>) {
     }
 }
 
-print "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
-print OUT "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
+print OUT "$chr\t$chrStart\t$chrEnd\t$hg19\t$mm10\t$rn5\t$canFam3\t$galGal4\n";
+print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
 
 close (INF);
 close (OUT);
+close (OUT2);
 
 my %coords_names;
 
@@ -100,22 +102,92 @@ while (my $line = <INF>) {
 
 close (INF);
 
-foreach my $key (keys %coords_names) {
-    print "$key\t$coords_names{$key}\n";
-}
+#foreach my $key (keys %coords_names) {
+#    print "$key\t$coords_names{$key}\n";
+#}
 
 open (INF, "<$file.conservation.temp");
 open (OUT, ">$file.conservation.bed");
 
+my $prev_chr = 0;
+my $prev_chrStart = 0;
+my $prev_chrEnd = 0;
+my $prev_hg19 = 0;
+my $prev_mm10 = 0;
+my $prev_rn5 = 0;
+my $prev_canFam3 = 0;
+my $prev_galGal4 = 0;
+my $coord_check;
+
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-    my $coord_check = "$cols[0]\t$cols[1]";
-    if (exists $coords_names{$coord_check}) {
-        print OUT "$line\t$coords_names{$coord_check}\n";
+#    my $coord_check = "$cols[0]\t$cols[1]";
+#    if (exists $coords_names{$coord_check}) {
+#        print OUT "$cols[0]\t$cols[1]$cols[2]\t$coords_names{$coord_check}.$cols[3].$cols[4].$cols[5].$cols[6].$cols[7]\n";
+#    }
+    if (($cols[0] eq $prev_chr) and ($cols[1] == $prev_chrEnd)) {
+        #then it needs to be added to the previous one
+        $prev_chrEnd = $cols[2];
+        if ($cols[3] eq $prev_hg19) {
+            $prev_hg19 = $cols[3];
+        }
+        else {
+            $prev_hg19 = 0;
+        }
+        if ($cols[4] eq $prev_mm10) {
+            $prev_mm10 = $cols[4];
+        }
+        else {
+            $prev_mm10 = 0;
+        }
+        if ($cols[5] eq $prev_rn5) {
+            $prev_rn5 = $cols[5];
+        }
+        else {
+            $prev_rn5 = 0;
+        }
+        if ($cols[6] eq $prev_canFam3) {
+            $prev_canFam3 = $cols[6];
+        }
+        else {
+            $prev_canFam3 = 0;
+        }
+        if ($cols[7] eq $prev_galGal4) {
+            $prev_galGal4 = $cols[7];
+        }
+        else {
+            $prev_galGal4 = 0;
+        }
+        
+    }
+    else {
+        if ($prev_chr eq 0) {
+            $prev_chr = $cols[0];
+            $prev_chrStart = $cols[1];
+            $prev_chrEnd = $cols[2];
+            $prev_hg19 = $cols[3];
+            $prev_mm10 = $cols[4];
+            $prev_rn5 = $cols[5];
+            $prev_canFam3 = $cols[6];
+            $prev_galGal4 = $cols[7];
+        }
+        else {
+            $coord_check = "$prev_chr\t$prev_chrStart";
+            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_check}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+            $prev_chr = $cols[0];
+            $prev_chrStart = $cols[1];
+            $prev_chrEnd = $cols[2];
+            $prev_hg19 = $cols[3];
+            $prev_mm10 = $cols[4];
+            $prev_rn5 = $cols[5];
+            $prev_canFam3 = $cols[6];
+            $prev_galGal4 = $cols[7];
+        }
     }
 }
-
+$coord_check = "$prev_chr\t$prev_chrStart";
+print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_check}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
 
 close (INF);
 close (OUT);
