@@ -118,6 +118,7 @@ my $prev_rn5 = 0;
 my $prev_canFam3 = 0;
 my $prev_galGal4 = 0;
 my $coord_check;
+my $coord_key;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -126,40 +127,56 @@ while (my $line = <INF>) {
 #    if (exists $coords_names{$coord_check}) {
 #        print OUT "$cols[0]\t$cols[1]$cols[2]\t$coords_names{$coord_check}.$cols[3].$cols[4].$cols[5].$cols[6].$cols[7]\n";
 #    }
+    
+    
     if (($cols[0] eq $prev_chr) and ($cols[1] == $prev_chrEnd)) {
-        #then it needs to be added to the previous one
-        $prev_chrEnd = $cols[2];
-        if ($cols[3] eq $prev_hg19) {
+        #then it needs to be added to the previous one, unless its the start of a second consecutive motif
+        $coord_check = "$cols[0]\t$cols[1]";
+        if (exists $coords_names{$coord_check}) {
+            $coord_key = "$prev_chr\t$prev_chrStart";
+            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_key}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+            $prev_chr = $cols[0];
+            $prev_chrStart = $cols[1];
+            $prev_chrEnd = $cols[2];
             $prev_hg19 = $cols[3];
-        }
-        else {
-            $prev_hg19 = 0;
-        }
-        if ($cols[4] eq $prev_mm10) {
             $prev_mm10 = $cols[4];
-        }
-        else {
-            $prev_mm10 = 0;
-        }
-        if ($cols[5] eq $prev_rn5) {
             $prev_rn5 = $cols[5];
-        }
-        else {
-            $prev_rn5 = 0;
-        }
-        if ($cols[6] eq $prev_canFam3) {
             $prev_canFam3 = $cols[6];
-        }
-        else {
-            $prev_canFam3 = 0;
-        }
-        if ($cols[7] eq $prev_galGal4) {
             $prev_galGal4 = $cols[7];
         }
         else {
-            $prev_galGal4 = 0;
+            $prev_chrEnd = $cols[2];
+            if ($cols[3] eq $prev_hg19) {
+                $prev_hg19 = $cols[3];
+            }
+            else {
+                $prev_hg19 = 0;
+            }
+            if ($cols[4] eq $prev_mm10) {
+                $prev_mm10 = $cols[4];
+            }
+            else {
+                $prev_mm10 = 0;
+            }
+            if ($cols[5] eq $prev_rn5) {
+                $prev_rn5 = $cols[5];
+            }
+            else {
+                $prev_rn5 = 0;
+            }
+            if ($cols[6] eq $prev_canFam3) {
+                $prev_canFam3 = $cols[6];
+            }
+            else {
+                $prev_canFam3 = 0;
+            }
+            if ($cols[7] eq $prev_galGal4) {
+                $prev_galGal4 = $cols[7];
+            }
+            else {
+                $prev_galGal4 = 0;
+            }
         }
-        
     }
     else {
         if ($prev_chr eq 0) {
