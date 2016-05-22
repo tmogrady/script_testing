@@ -9,7 +9,7 @@ my ($file, $file2) = @ARGV;
 
 open (INF, "<$file");
 open (OUT, ">$file.conservation.temp");
-open (OUT2, ">$file.temp.bed");
+#open (OUT2, ">$file.temp.bed");
 
 my $chr;
 my $chrStart;
@@ -30,7 +30,7 @@ while (my $line = <INF>) {
         if ($cols[1] =~ /hg19/) {
             if ($first == 1) {
                 print OUT "$chr\t$chrStart\t$chrEnd\t$hg19\t$mm10\t$rn5\t$canFam3\t$galGal4\n";
-                print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
+                #print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
                 $mm10 = 0;
                 $rn5 = 0;
                 $canFam3 = 0;
@@ -83,11 +83,11 @@ while (my $line = <INF>) {
 }
 
 print OUT "$chr\t$chrStart\t$chrEnd\t$hg19\t$mm10\t$rn5\t$canFam3\t$galGal4\n";
-print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
+#print OUT2 "$chr\t$chrStart\t$chrEnd\t$hg19.$mm10.$rn5.$canFam3.$galGal4\n";
 
 close (INF);
 close (OUT);
-close (OUT2);
+#close (OUT2);
 
 my %coords_names;
 
@@ -208,3 +208,5 @@ print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_check}.
 
 close (INF);
 close (OUT);
+
+system("rm $file.conservation.temp");
