@@ -89,9 +89,9 @@ close (INF);
 close (OUT);
 #close (OUT2);
 
-my %coords_names;
+open (INF, "<$file2"); #this section creates a hash of chromosomes and start coordinates in the bed file for use in condensing the blocks in the maf file into single motifs, while still keeping consecutive motifs as separate features
 
-open (INF, "<$file2");
+my %coords_names;
 
 while (my $line = <INF>) {
     chomp($line);
@@ -102,12 +102,9 @@ while (my $line = <INF>) {
 
 close (INF);
 
-#foreach my $key (keys %coords_names) {
-#    print "$key\t$coords_names{$key}\n";
-#}
 
 open (INF, "<$file.conservation.temp");
-open (OUT, ">$file.conservation.bed");
+open (OUT, ">$file.conservation_collapsed.temp");
 
 my $prev_chr = 0;
 my $prev_chrStart = 0;
@@ -120,21 +117,18 @@ my $prev_galGal4 = 0;
 my $coord_check;
 my $coord_key;
 
+my %cons;
+
 while (my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
-#    my $coord_check = "$cols[0]\t$cols[1]";
-#    if (exists $coords_names{$coord_check}) {
-#        print OUT "$cols[0]\t$cols[1]$cols[2]\t$coords_names{$coord_check}.$cols[3].$cols[4].$cols[5].$cols[6].$cols[7]\n";
-#    }
-    
-    
     if (($cols[0] eq $prev_chr) and ($cols[1] == $prev_chrEnd)) {
         #then it needs to be added to the previous one, unless its the start of a second consecutive motif
         $coord_check = "$cols[0]\t$cols[1]";
-        if (exists $coords_names{$coord_check}) {
+        if (exists $coords_names{$coord_check}) { #checks to see if the start coordinate of the feature exists as a motif start coordinate. If so, this is a subsequent occurence of the motif, not a blocksplit part of the previous motif
+            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n"; #prints the full motif line to a (possibly unnecessary) file
             $coord_key = "$prev_chr\t$prev_chrStart";
-            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_key}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+            $cons{$coord_key} = "$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4"; #puts the full motif in a hash to check against the input bed file later
             $prev_chr = $cols[0];
             $prev_chrStart = $cols[1];
             $prev_chrEnd = $cols[2];
@@ -190,8 +184,9 @@ while (my $line = <INF>) {
             $prev_galGal4 = $cols[7];
         }
         else {
+            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
             $coord_check = "$prev_chr\t$prev_chrStart";
-            print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_check}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+            $cons{$coord_check} = "$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4";
             $prev_chr = $cols[0];
             $prev_chrStart = $cols[1];
             $prev_chrEnd = $cols[2];
@@ -204,9 +199,26 @@ while (my $line = <INF>) {
     }
 }
 $coord_check = "$prev_chr\t$prev_chrStart";
-print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$coords_names{$coord_check}.$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+print OUT "$prev_chr\t$prev_chrStart\t$prev_chrEnd\t$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4\n";
+$cons{$coord_check} = "$prev_hg19.$prev_mm10.$prev_rn5.$prev_canFam3.$prev_galGal4";
 
 close (INF);
 close (OUT);
 
 system("rm $file.conservation.temp");
+system("rm $file.conservation_collapsed.temp");
+
+open (INF, "<$file2"); #this section adds the conservation information to the input bed file.
+open (OUT, ">$file.conservation.bed");
+
+my $check;
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    $check = "$cols[0]\t$cols[1]";
+    print OUT "$line:$cons{$check}\n";
+}
+
+close(INF);
+close(OUT);
