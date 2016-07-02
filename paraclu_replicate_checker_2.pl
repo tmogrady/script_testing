@@ -19,15 +19,39 @@ print "Processing first file\n";
 
 my $coord_key;
 my $values;
+my $prev_plus_chr;
+my $prev_plus_coord;
+my $coord_sum;
+my $prev_plus_count;
+my $prev_plus_dens;
+my $weighted_dens_sum;
+my $prev_plus_peak_count;
+my $plus_collapse_count;
 
 while(my $line = <INF>) {
     chomp($line);
     my @cols = split("\t", $line);
     my @subcols = split("\:", $cols[3]);
     if ($cols[5] eq "+") {
-        $coord_key = "$cols[0]\:$cols[1]\:$cols[5]"; #creates a key for the hash with chr, chrStart and strand
-        $values = "$cols[4]\:$subcols[3]\:1"; #creates a value for the hash with tag count, relative density and replicate count
-        $peaks{$coord_key} = $values;
+        
+        if (($cols[0] eq $prev_chr) and ($cols[1] <= ($prev_coord + $dist))) { #if the peak is less than the specified distance from the previous peak
+            
+            $prev_plus_count = $prev_plus_count + $cols[4]; #adds tag depths
+            $plus_collapse_count = $plus_collapse_count + 1; #will be used to calculate average density & start site
+            $prev_plus_dens = (($subcols[3] + ($hashcols[1]*$hashcols[2]))/($hashcols[2]+1));
+            my $new_start = (($coord*$hashcols[0]) + ($file_start*$cols[4]))/($hashcols[0] + $cols[4]);
+            
+        }
+        else {
+            $coord_key = "$prev_plus_chr\:$prev_plus_coord\:+"; #creates a key for the hash with chr, chrStart and strand
+            $values = "$prev_plus_count\:$prev_plus_dens\:1"; #creates a value for the hash with tag count, relative density and replicate count
+            $peaks{$coord_key} = $values;
+            
+            $prev_plus_chr = $cols[0];
+            $prev_plus_coord = $cols[1];
+            $prev_plus_count = $cols[4];
+            $prev_plus_dens = $subcols[3];
+        }
     }
     if ($cols[5] eq "-") {
         $coord_key = "$cols[0]\:$cols[2]\:$cols[5]"; #creates a key for the hash with chr, chrEnd and strand
@@ -35,6 +59,10 @@ while(my $line = <INF>) {
         $peaks{$coord_key} = $values;
     }
 }
+$coord_key = "$prev_plus_chr\:$prev_plus_coord\:+"; #creates a key for the hash with chr, chrStart and strand
+$values = "$prev_plus_count\:$prev_plus_dens\:1"; #creates a value for the hash with tag count, relative density and replicate count
+$peaks{$coord_key} = $values;
+
 
 #foreach (sort keys %peaks) {
 #    print "$_: $peaks{$_}\n";
