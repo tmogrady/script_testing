@@ -177,3 +177,5 @@ else {
 close(INF);
 close(OUT);
 close(OUT2);
+
+system("rm replicates_sorted.temp");
