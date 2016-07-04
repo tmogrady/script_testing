@@ -178,4 +178,9 @@ close(INF);
 close(OUT);
 close(OUT2);
 
+system("sort -k1,1 -k2n any_replicate.txt > any_replicate.bed");
+system("sort -k1,1 -k2n both_replicates.txt > both_replicates.bed");
+
 system("rm replicates_sorted.temp");
+system("rm any_replicate.txt");
+system("rm both_replicates.txt");
