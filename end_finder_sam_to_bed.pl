@@ -227,24 +227,24 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
     close(OUT);
 
-    system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$chrom\E.read_ends.bedgraph.noheader");
+    system("cat \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp | sort -k2,3n > \Q$SMRT_file\E.\Q$chrom\E.read_ends.bedgraph");
 
     system("rm \Q$SMRT_file\E.sorted.plus.sam.read_ends.bedgraph.temp");
     system("rm \Q$SMRT_file\E.sorted.minus.sam.read_ends.bedgraph.temp");
     system("rm \Q$SMRT_file\E.sorted.minus.sam.temp");
 
     #add header to bedgraph file
-    open(INF, "<$SMRT_file.$chrom.read_ends.bedgraph.noheader") or die "couldn't open file";
-    open(OUT, ">$SMRT_file.$chrom.read_ends.bedgraph") or die "couldn't open file";
-
-    print OUT "track type=bedGraph name=\"$SMRT_file.$chrom.read_ends.bedgraph\" description=\"3' ends of Iso-Seq reads from end_finder_sam_to_bed.pl\"\n";
-    while (my $line = <INF>) {
-        print OUT $line;
-    }
-    close(OUT);
-    close(INF);
-
-    system("rm \Q$SMRT_file\E.\Q$chrom\E.read_ends.bedgraph.noheader");
+#    open(INF, "<$SMRT_file.$chrom.read_ends.bedgraph.noheader") or die "couldn't open file";
+#    open(OUT, ">$SMRT_file.$chrom.read_ends.bedgraph") or die "couldn't open file";
+#
+#    print OUT "track type=bedGraph name=\"$SMRT_file.$chrom.read_ends.bedgraph\" description=\"3' ends of Iso-Seq reads from end_finder_sam_to_bed.pl\"\n";
+#    while (my $line = <INF>) {
+#        print OUT $line;
+#    }
+#    close(OUT);
+#    close(INF);
+#
+#    system("rm \Q$SMRT_file\E.\Q$chrom\E.read_ends.bedgraph.noheader");
 
     #make a bed file from the SMRT bedgraph file:
     open(INF, "<$SMRT_file.$chrom.read_ends.bedgraph") or die "couldn't open file";
@@ -256,21 +256,21 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
     close(OUT);
 
-    system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.ends.temp.bed > \Q$SMRT_file\E.ends.bed.noheader");
+    system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.ends.temp.bed > \Q$SMRT_file\E.$chrom.SMRT_ends.bed");
     system("rm \Q$SMRT_file.ends.temp.bed\E");
 
     #add header to bed file
-    open(INF, "<$SMRT_file.ends.bed.noheader") or die "couldn't open file";
-    open(OUT, ">$SMRT_file.$chrom.SMRT_ends.bed") or die "couldn't open file";
-
-    print OUT "track type=bed name=\"$SMRT_file.$chrom.SMRT_ends.bed\" description=\"consensus 3' ends of Iso-Seq reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
-    while (my $line = <INF>) {
-        print OUT $line;
-    }
-    close(OUT);
-    close(INF);
-
-    system("rm \Q$SMRT_file\E.ends.bed.noheader");
+#    open(INF, "<$SMRT_file.ends.bed.noheader") or die "couldn't open file";
+#    open(OUT, ">$SMRT_file.$chrom.SMRT_ends.bed") or die "couldn't open file";
+#
+#    print OUT "track type=bed name=\"$SMRT_file.$chrom.SMRT_ends.bed\" description=\"consensus 3' ends of Iso-Seq reads within $distance_between_SMRT_peaks bp collapsed to weighted center from end_finder_sam_to_bed.pl\"\n";
+#    while (my $line = <INF>) {
+#        print OUT $line;
+#    }
+#    close(OUT);
+#    close(INF);
+#
+#    system("rm \Q$SMRT_file\E.ends.bed.noheader");
 
     #####----------ILLUMINA FILE PROCESSING-------------######
 
@@ -369,23 +369,23 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
     close(OUT);
 
-    system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.bedgraph > \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+    system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.bedgraph > \Q$ill_file\E.$chrom.polyA_sites.bedgraph");
     system("rm \Q$ill_file\E.polyA_sites.temp.bedgraph");
     system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
     system("rm \Q$ill_file\E.polyA_sites.temp");
 
     #add header to bedgraph file
-    open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
-    open(OUT, ">$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
-
-    print OUT "track type=bedGraph name=\"$ill_file.$chrom.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
-    while (my $line = <INF>) {
-        print OUT $line;
-    }
-    close(OUT);
-    close(INF);
-
-    system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+#    open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
+#    open(OUT, ">$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
+#
+#    print OUT "track type=bedGraph name=\"$ill_file.$chrom.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
+#    while (my $line = <INF>) {
+#        print OUT $line;
+#    }
+#    close(OUT);
+#    close(INF);
+#
+#    system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
 
     #make a bed file from the Illumina bedgraph file:
     open(INF, "<$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
@@ -397,21 +397,21 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
     close(OUT);
 
-    system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed.noheader");
+    system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed");
     system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed");
 
     #add header to bed file
-    open(INF, "<$ill_file.$chrom.polyA_sites.bed.noheader") or die "couldn't open file";
-    open(OUT, ">$ill_file.$chrom.polyA_sites.bed") or die "couldn't open file";
-
-    print OUT "track type=bed name=\"$ill_file.$chrom.polyA_sites.bed\" description=\"consensus polyA sites of Illumina reads with tails of 5 As with 2 mismatches within $distance_between_ill_peaks bp collapsed to weighted centers from end_finder_sam_to_bed.pl\"\n";
-    while (my $line = <INF>) {
-        print OUT $line;
-    }
-    close(OUT);
-    close(INF);
-
-    system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed.noheader");
+#    open(INF, "<$ill_file.$chrom.polyA_sites.bed.noheader") or die "couldn't open file";
+#    open(OUT, ">$ill_file.$chrom.polyA_sites.bed") or die "couldn't open file";
+#
+#    print OUT "track type=bed name=\"$ill_file.$chrom.polyA_sites.bed\" description=\"consensus polyA sites of Illumina reads with tails of 5 As with 2 mismatches within $distance_between_ill_peaks bp collapsed to weighted centers from end_finder_sam_to_bed.pl\"\n";
+#    while (my $line = <INF>) {
+#        print OUT $line;
+#    }
+#    close(OUT);
+#    close(INF);
+#
+#    system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed.noheader");
 
     #####----------SEEKING ILLUMINA SUPPORT FOR SMRT ENDS-------------######
 
@@ -542,7 +542,7 @@ foreach my $chrom (sort keys %chroms) {
 
     print "Comparing Iso-Seq ends to annotated ends...\n";
 
-    print OUT "track type=bedDetail name=\"$SMRT_file.$chrom.SMRT_ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT Iso-Seq read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
+    #print OUT "track type=bedDetail name=\"$SMRT_file.$chrom.SMRT_ends.bed.illumina_support.bed\" description=\"validated ends supported by  at least $min_SMRT Iso-Seq read ends within $distance_between_SMRT_peaks bp, with an Illumina polyA site within $dist_SMRT_ill_d bp downstream or $dist_SMRT_ill_u bp upstream, or within $ann_dist bp of an annotated end. Illumina polyA sites have at least $min_ill reads with $min_As As and $min_softclip mismatches, within $distance_between_ill_peaks bp of each other. From end_finder_sam_to_bed.pl\"\n";
 
     my $annotated_found_by_SMRT = 0;
     my $novel_found_by_SMRT_ill = 0;
