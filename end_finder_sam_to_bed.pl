@@ -629,26 +629,26 @@ foreach my $chrom (sort keys %chroms) {
 }
 
 system("cat $ill_file.*.polyA_sites.bed > $ill_file.polyA_sites.bed");
-print "consolidating Illumina polyA site bed\n";
+#print "consolidating Illumina polyA site bed\n";
 system("cat $ill_file.*.polyA_sites.bedgraph > $ill_file.polyA_sites.bedgraph");
-print "consolidating Illumina polyA site bedgraph\n";
+#print "consolidating Illumina polyA site bedgraph\n";
 system("cat $SMRT_file.*.SMRT_ends.bed > $SMRT_file.SMRT_ends.bed");
-print "consolidating Iso-Seq ends bed\n";
+#print "consolidating Iso-Seq ends bed\n";
 system("cat $SMRT_file.*.read_ends.bedgraph > $SMRT_file.read_ends.bedgraph");
-print "consolidating Iso-Seq ends bedgraph\n";
+#print "consolidating Iso-Seq ends bedgraph\n";
 system("cat $SMRT_file.*.validated_ends.bed > $SMRT_file.validated_ends.bed");
-print "consolidating validated ends\n";
+#print "consolidating validated ends\n";
 
 system("rm $ill_file.*.polyA_sites.bed");
-print "removing Illumina polyA site bed files\n";
+#print "removing Illumina polyA site bed files\n";
 system("rm $ill_file.*.polyA_sites.bedgraph");
-print "removing Illumina polyA sites bedgraphs\n";
+#print "removing Illumina polyA sites bedgraphs\n";
 system("rm $SMRT_file.*.SMRT_ends.bed");
-print "removing Iso-Seq ends bed file\n";
+#print "removing Iso-Seq ends bed file\n";
 system("rm $SMRT_file.*.read_ends.bedgraph");
-print "removing Iso_seq ends bedgraph files\n";
+#print "removing Iso_seq ends bedgraph files\n";
 system("rm $SMRT_file.*.validated_ends.bed");
-print "removing validated ends files\n";
+#print "removing validated ends files\n";
 
 my $sum_total_found = 0;
 my $sum_novel_found = 0;
