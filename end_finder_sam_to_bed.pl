@@ -678,6 +678,10 @@ print OUT "$sum_total_found 3' ends\n\t$sum_novel_found novel\n\t$sum_SMRT_ann a
 
 close(OUT);
 
+#print %chroms, "\n";
+
+#print @ann_ends, "\n";
+
 #########################
 sub collapse_bedgraph {
     my ($chrom, $distance_between_peaks) = @_;
