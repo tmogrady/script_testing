@@ -464,20 +464,23 @@ foreach my $chrom (sort keys %chroms) {
     print "================================================\n";
 }
 
-system("cat $SMRT_jfile.chr*.bed > $SMRT_jfile.introns.bed");
+system("cat $SMRT_jfile.*.bed > ${SMRT_jfile}_introns.bed");
 
 if (defined $ig_file) {
-    system("cat $ill_jfile*.no_ignored.bed > $ill_jfile.introns.bed");
+    system("cat $ill_jfile*.no_ignored.bed > ${ill_jfile}_introns.bed");
 }
 else {
-    system("cat $ill_jfile.chr*.bed > $ill_jfile.introns.bed");
+    system("cat $ill_jfile.*.bed > ${ill_jfile}_introns.bed");
 }
 
 
-system("cat *.validated_introns.bed > $SMRT_jfile.validated_introns.bed");
+system("cat *.validated_introns.bed > ${SMRT_jfile}_validated_introns.bed");
 
-system("rm $SMRT_jfile.chr*");
-system("rm $ill_jfile.chr*");
+system("rm $SMRT_jfile.*.bed");
+if (defined $ig_file) {
+    system("rm $ill_jfile*.no_ignored.bed");
+}
+system("rm $ill_jfile.*.bed");
 
 my $sum_total_found = 0;
 my $sum_novel_found = 0;
