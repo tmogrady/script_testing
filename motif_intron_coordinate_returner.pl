@@ -28,12 +28,12 @@ while (my $line = <INF>) {
     else {
         my @pos = match_all_positions($regex, $line);
         if ($up == 0) {
-            if ($name eq "down_in") {
+            if ($name =~ m/down_in/) {
                 foreach my $motif_start (@pos) {
                     print OUT3 "$motif_start\t$name\n";
                 }
             }
-            elsif ($name eq "down_ex") {
+            elsif ($name =~ m/down_ex/) {
                 foreach my $motif_start (@pos) {
                     print OUT4 "$motif_start\t$name\n";
                 }
@@ -42,13 +42,13 @@ while (my $line = <INF>) {
         }
         elsif ($up == 1){
             my $length = length($line);
-            if ($name eq "up_in") {
+            if ($name =~ m/up_in/) {
                 foreach my $motif_start (@pos) {
                     my $up_start = $length - $motif_start;
                     print OUT "-$up_start\t$name\n";
                 }
             }
-            elsif ($name eq "up_ex" ) {
+            elsif ($name =~ m/up_ex/ ) {
                 foreach my $motif_start (@pos) {
                     my $up_start = $length - $motif_start;
                     print OUT2 "-$up_start\t$name\n";
