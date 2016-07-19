@@ -29,12 +29,12 @@ while (my $line = <INF>) {
         $down_chrStart = $cols[6];
         $down_chrEnd = $cols[9];
         if ($cols[22] > 0){
-            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:up_in\t1\t$cols[4]\n";
-            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:down_in\t1\t$cols[4]\n";
+            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:up_in\t1\t$cols[4]\n";
+            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:down_in\t1\t$cols[4]\n";
         }
         elsif ($cols[22] < 0) {
-            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:up_ex\t-1\t$cols[4]\n";
-            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:down_ex\t\-1\t$cols[4]\n";
+            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:up_ex\t-1\t$cols[4]\n";
+            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:down_ex\t\-1\t$cols[4]\n";
         }
     }
     elsif ($cols[4] eq "-") {
@@ -43,12 +43,12 @@ while (my $line = <INF>) {
         $down_chrStart = $cols[8];
         $down_chrEnd = $cols[5];
         if ($cols[22] > 0) {
-            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:up_in\t1\t$cols[4]\n";
-            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:down_in\t1\t$cols[4]\n";
+            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:up_in\t1\t$cols[4]\n";
+            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:down_in\t1\t$cols[4]\n";
         }
         elsif ($cols[22] < 0) {
-            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:up_ex\t-1\t$cols[4]\n";
-            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:down_ex\t-1\t$cols[4]\n";
+            print OUT "$chr\t$up_chrStart\t$up_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:up_ex\t-1\t$cols[4]\n";
+            print OUT "$chr\t$down_chrStart\t$down_chrEnd\t$cols[1]:$cols[3]$cols[4]$cols[5]\-$cols[6]:down_ex\t-1\t$cols[4]\n";
         }
     }
 }
