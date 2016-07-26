@@ -553,7 +553,7 @@ close(OUT);
 open(OUT, ">validated_isoforms_stats.txt");
 
 my $novel_count = $iso_count - $ann_count;
-print OUT "$iso_count validated transcripts\n\t$novel_count novel\n\t$ann_count annotated\n";
+print OUT "$iso_count validated transcripts\n\t$novel_count novel\n\t$ann_count annotated\n\n$good_start_number sequences have validated start sites.\n$good_start_end_number sequences have validated start and end sites.\n$validated_count fully validated sequences collapse into $iso_count distinct isoforms.\n$ann_count isoforms match annotated transcripts.\n\nINPUT\n$test_file\n$valid_starts_file\n$valid_ends_file\n$valid_introns_file\n$ann_file\n";
 
 close(OUT);
 
