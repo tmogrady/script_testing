@@ -167,7 +167,7 @@ my $new_end_line;
 foreach my $good_start (@good_start) { #starts with the array of SMRT transcripts with validated 5' ends
 	my ($chrom, $chromStart, $chromEnd, $name, $score, $strand, $thickStart, $thickEnd, $itemRgb, $blockCount, $blockSizes, $blockStarts, $new_coord) = split("\t", $good_start);
 	if ($strand eq "+") { #determines 3' end of the SMRT transcript
-		foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated start sites
+		foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated end sites
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromEnd >= $range_start) and ($chromEnd <= $range_end)) {
@@ -179,7 +179,7 @@ foreach my $good_start (@good_start) { #starts with the array of SMRT transcript
         }
     }
 	elsif ($strand eq "-") {
-        foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated start sites
+        foreach my $valid_end (@valid_end) { #checks to see if the 3' end of the SMRT transcript matches a range of possible 3' end values from the list of validated end sites
             my @end_cols = split("\t", $valid_end);
             my ($range_start, $range_end, $SMRT_depth) = split(":", $end_cols[6]);
             if (($chrom eq $end_cols[0]) and ($strand eq $end_cols[5]) and ($chromStart >= $range_start) and ($chromStart <= $range_end)) {
