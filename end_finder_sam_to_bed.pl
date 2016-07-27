@@ -331,6 +331,7 @@ foreach my $chrom (sort keys %chroms) {
                 }
                 else {
                     print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
+                    $chrom_plus = $cols[0];
                     $previous_coordinate_p = $cols[1];
                     $count_p = 1;
                 }
