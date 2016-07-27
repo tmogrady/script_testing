@@ -135,6 +135,120 @@ close(OUT);
 system ("sort -k 3,3 -k 4,4n \Q$ill_file\E.polyA_ends.temp > \Q$ill_file\E.polyA_ends.sam");
 system ("rm \Q$ill_file\E.polyA_ends.temp");
 
+open(INF, "<$ill_file.polyA_ends.sam") or die "couldn't open file";
+open(OUT, ">$ill_file.polyA_sites.temp") or die "couldn't open file";
+
+print "Processing Illumina reads with polyA tails...\n";
+#create a file with the coordinates corresponding to the polyA ends of the reads, and sort it by those coordinates
+
+my $cigar_sum;
+my $cigar_calc;
+my @plus_ends;
+my @read_dist;
+
+while (my $line = <INF>) {
+    chomp($line);
+    my @cols = split("\t", $line);
+    if ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) { #minus strand
+        print OUT "$cols[2]\t$cols[3]\t0\n";
+    }
+    elsif ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) { #plus strand
+        while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
+            push (@read_dist, $1);
+        }
+        $cigar_sum += $_ for @read_dist;
+        $cigar_calc = $cols[3] + $cigar_sum - 1; #subtract one to account for start/end inclusion
+        $cigar_sum = 0;
+        @read_dist = ();
+        print OUT "$cols[2]\t$cigar_calc\t1\n";
+    }
+}
+close(INF);
+close(OUT);
+
+system("sort -k 1,1 -k 2,2n \Q$ill_file.polyA_sites.temp\E > \Q$ill_file.polyA_sites.temp\E.sorted");
+
+#create a bedgraph file from the sorted coordinates file
+
+open(INF, "<$ill_file.polyA_sites.temp.sorted") or die "couldn't open file";
+open(OUT, ">$ill_file.polyA_sites.temp.bedgraph") or die "couldn't open file";
+
+my $chrom_minus;
+my $previous_coordinate_m=0;
+my $count_m=0;
+my $chrom_plus;
+my $previous_coordinate_p=0;
+my $count_p=0;
+
+while (my $line = <INF>) {
+    
+    my @cols = split("\t", $line);
+    
+    #reads on the plus strand:
+    if ($cols[2] == 1) {
+        if ($chrom_plus) { #if $chrom_plus has been defined (i.e. there is a previous plus strand read)
+            if (($cols[0] eq $chrom_plus) and ($cols[1] == $previous_coordinate_p)) {
+                $count_p++;
+            }
+            else {
+                print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
+                $chrom_plus = $cols[0];
+                $previous_coordinate_p = $cols[1];
+                $count_p = 1;
+            }
+        }
+        else { #if $chrom_plus has not been defined (i.e. there is no previous plus strand read)
+            $chrom_plus = $cols[0];
+            $previous_coordinate_p = $cols[1];
+            $count_p = 1;
+        }
+    }
+    
+    #reads on the minus strand:
+    elsif ($cols[2] == 0) {
+        if ($chrom_minus) {
+            if (($cols[0] eq $chrom_minus) and ($cols[1] == $previous_coordinate_m)) {
+                $count_m++;
+            }
+            else {
+                print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
+                $chrom_minus = $cols[0];
+                $previous_coordinate_m = $cols[1];
+                $count_m = 1;
+            }
+        }
+        else {
+            $chrom_minus = $cols[0];
+            $previous_coordinate_m = $cols[1];
+            $count_m = 1;
+        }
+    }
+}
+#prints to output file, converting chrStart to 0-based bedgraph coordinates
+print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n";
+print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n";
+
+close(INF);
+close(OUT);
+
+system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.bedgraph > \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+system("rm \Q$ill_file\E.polyA_sites.temp.bedgraph");
+system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
+system("rm \Q$ill_file\E.polyA_sites.temp");
+
+add header to bedgraph file
+    open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
+    open(OUT, ">$ill_file.polyA_sites.bedgraph") or die "couldn't open file";
+
+    print OUT "track type=bedGraph name=\"$ill_file.$chrom.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least $min_As As and at least $min_softclip mismatches from end_finder_sam_to_bed.pl\"\n";
+    while (my $line = <INF>) {
+        print OUT $line;
+    }
+    close(OUT);
+    close(INF);
+
+    system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+
 #####----------CHROMOSOME-BY-CHROMOSOME ANALYSIS-------------######
 
 my @total_ends_found;
@@ -274,119 +388,6 @@ foreach my $chrom (sort keys %chroms) {
 
     #####----------ILLUMINA FILE PROCESSING-------------######
 
-    open(INF, "<$ill_file.polyA_ends.sam") or die "couldn't open file";
-    open(OUT, ">$ill_file.polyA_sites.temp") or die "couldn't open file";
-    
-    print "Processing Illumina reads with polyA tails...\n";
-    #create a file with the coordinates corresponding to the polyA ends of the reads, and sort it by those coordinates
-
-    my $cigar_sum;
-    my $cigar_calc;
-    my @plus_ends;
-    my @read_dist;
-
-    while (my $line = <INF>) {
-        chomp($line);
-        my @cols = split("\t", $line);
-        if ($cols[1] == 73 || $cols[1] == 97 || $cols[1] == 99 || $cols[1] == 0) { #minus strand
-            print OUT "$cols[2]\t$cols[3]\t0\n";
-        }
-        elsif ($cols[1] == 81 || $cols[1] == 83 || $cols[1] == 89 || $cols[1] == 16) { #plus strand
-            while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
-                push (@read_dist, $1);
-            }
-            $cigar_sum += $_ for @read_dist;
-            $cigar_calc = $cols[3] + $cigar_sum - 1; #subtract one to account for start/end inclusion
-            $cigar_sum = 0;
-            @read_dist = ();
-            print OUT "$cols[2]\t$cigar_calc\t1\n";
-        }
-    }
-    close(INF);
-    close(OUT);
-
-    system("sort -k 1,1 -k 2,2n \Q$ill_file.polyA_sites.temp\E > \Q$ill_file.polyA_sites.temp\E.sorted");
-
-    #create a bedgraph file from the sorted coordinates file
-
-    open(INF, "<$ill_file.polyA_sites.temp.sorted") or die "couldn't open file";
-    open(OUT, ">$ill_file.polyA_sites.temp.bedgraph") or die "couldn't open file";
-
-    my $chrom_minus;
-    my $previous_coordinate_m=0;
-    my $count_m=0;
-    my $chrom_plus;
-    my $previous_coordinate_p=0;
-    my $count_p=0;
-
-    while (my $line = <INF>) {
-        
-        my @cols = split("\t", $line);
-        
-        #reads on the plus strand:
-        if ($cols[2] == 1) {
-            if ($chrom_plus) { #if $chrom_plus has been defined (i.e. there is a previous plus strand read)
-                if (($cols[0] eq $chrom_plus) and ($cols[1] == $previous_coordinate_p)) {
-                    $count_p++;
-                }
-                else {
-                    print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
-                    $chrom_plus = $cols[0];
-                    $previous_coordinate_p = $cols[1];
-                    $count_p = 1;
-                }
-            }
-            else { #if $chrom_plus has not been defined (i.e. there is no previous plus strand read)
-                $chrom_plus = $cols[0];
-                $previous_coordinate_p = $cols[1];
-                $count_p = 1;
-            }
-        }
-        
-        #reads on the minus strand:
-        elsif ($cols[2] == 0) {
-            if ($chrom_minus) {
-                if (($cols[0] eq $chrom_minus) and ($cols[1] == $previous_coordinate_m)) {
-                    $count_m++;
-                }
-                else {
-                    print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n"; #prints to output file, converting chrStart to 0-based bedgraph coordinates
-                    $chrom_minus = $cols[0];
-                    $previous_coordinate_m = $cols[1];
-                    $count_m = 1;
-                }
-            }
-            else {
-                $chrom_minus = $cols[0];
-                $previous_coordinate_m = $cols[1];
-                $count_m = 1;
-            }
-        }
-    }
-    #prints to output file, converting chrStart to 0-based bedgraph coordinates
-    print OUT $chrom_plus, "\t", $previous_coordinate_p-1, "\t", $previous_coordinate_p, "\t", $count_p, "\n";
-    print OUT $chrom_minus, "\t", $previous_coordinate_m-1, "\t", $previous_coordinate_m, "\t-", $count_m, "\n";
-
-    close(INF);
-    close(OUT);
-
-    system("sort -k 1,1 -k 2,2n \Q$ill_file\E.polyA_sites.temp.bedgraph > \Q$ill_file\E.$chrom.polyA_sites.bedgraph");
-    system("rm \Q$ill_file\E.polyA_sites.temp.bedgraph");
-    system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
-    system("rm \Q$ill_file\E.polyA_sites.temp");
-
-    #add header to bedgraph file
-#    open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
-#    open(OUT, ">$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
-#
-#    print OUT "track type=bedGraph name=\"$ill_file.$chrom.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least 5As and at least 2 mismatches from end_finder_sam_to_bed.pl\"\n";
-#    while (my $line = <INF>) {
-#        print OUT $line;
-#    }
-#    close(OUT);
-#    close(INF);
-#
-#    system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
 
     #make a bed file from the Illumina bedgraph file:
     open(INF, "<$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
@@ -640,15 +641,15 @@ system("cat $SMRT_file.*.read_ends.bedgraph > $SMRT_file.read_ends.bedgraph");
 system("cat $SMRT_file.*.validated_ends.bed > $SMRT_file.validated_ends.bed");
 #print "consolidating validated ends\n";
 
-system("rm $ill_file.*.polyA_sites.bed");
+#system("rm $ill_file.*.polyA_sites.bed");
 #print "removing Illumina polyA site bed files\n";
-system("rm $ill_file.*.polyA_sites.bedgraph");
+#system("rm $ill_file.*.polyA_sites.bedgraph");
 #print "removing Illumina polyA sites bedgraphs\n";
-system("rm $SMRT_file.*.SMRT_ends.bed");
+#system("rm $SMRT_file.*.SMRT_ends.bed");
 #print "removing Iso-Seq ends bed file\n";
-system("rm $SMRT_file.*.read_ends.bedgraph");
+#system("rm $SMRT_file.*.read_ends.bedgraph");
 #print "removing Iso_seq ends bedgraph files\n";
-system("rm $SMRT_file.*.validated_ends.bed");
+#system("rm $SMRT_file.*.validated_ends.bed");
 #print "removing validated ends files\n";
 
 my $sum_total_found = 0;
