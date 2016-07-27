@@ -236,18 +236,18 @@ system("rm \Q$ill_file\E.polyA_sites.temp.bedgraph");
 system("rm \Q$ill_file\E.polyA_sites.temp.sorted");
 system("rm \Q$ill_file\E.polyA_sites.temp");
 
-add header to bedgraph file
-    open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
-    open(OUT, ">$ill_file.polyA_sites.bedgraph") or die "couldn't open file";
+#add header to bedgraph file
+open(INF, "<$ill_file.polyA_sites.bedgraph.noheader") or die "couldn't open file";
+open(OUT, ">$ill_file.polyA_sites.bedgraph") or die "couldn't open file";
 
-    print OUT "track type=bedGraph name=\"$ill_file.$chrom.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least $min_As As and at least $min_softclip mismatches from end_finder_sam_to_bed.pl\"\n";
-    while (my $line = <INF>) {
-        print OUT $line;
-    }
-    close(OUT);
-    close(INF);
+print OUT "track type=bedGraph name=\"$ill_file.polyA_sites.bedgraph\" description=\"polyA sites in Illumina reads with at least $min_As As and at least $min_softclip mismatches from end_finder_sam_to_bed.pl\"\n";
+while (my $line = <INF>) {
+    print OUT $line;
+}
+close(OUT);
+close(INF);
 
-    system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
+system("rm \Q$ill_file\E.polyA_sites.bedgraph.noheader");
 
 #####----------CHROMOSOME-BY-CHROMOSOME ANALYSIS-------------######
 
@@ -388,9 +388,9 @@ foreach my $chrom (sort keys %chroms) {
 
     #####----------ILLUMINA FILE PROCESSING-------------######
 
-
     #make a bed file from the Illumina bedgraph file:
-    open(INF, "<$ill_file.$chrom.polyA_sites.bedgraph") or die "couldn't open file";
+    system("awk '\$1==\"$chrom\"' \Q$ill_file\E.polyA_sites.bedgraph > \Q$ill_file\E.$chrom.polyA_sites.bedgraph.temp");
+    open(INF, "<$ill_file.$chrom.polyA_sites.bedgraph.temp") or die "couldn't open file";
     open(OUT, ">$ill_file.$chrom.polyA_sites.temp.bed") or die "couldn't open file";
 
     print "Combining Illumina polyA tails within $distance_between_ill_peaks of each other and calculating consensus 3' ends...\n";
@@ -401,6 +401,7 @@ foreach my $chrom (sort keys %chroms) {
 
     system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed");
     system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed");
+    system("rm $ill_file.$chrom.polyA_sites.bedgraph.temp");
 
     #add header to bed file
 #    open(INF, "<$ill_file.$chrom.polyA_sites.bed.noheader") or die "couldn't open file";
@@ -632,7 +633,7 @@ foreach my $chrom (sort keys %chroms) {
 
 system("cat $ill_file.*.polyA_sites.bed > $ill_file.polyA_sites.bed");
 #print "consolidating Illumina polyA site bed\n";
-system("cat $ill_file.*.polyA_sites.bedgraph > $ill_file.polyA_sites.bedgraph");
+#system("cat $ill_file.*.polyA_sites.bedgraph > $ill_file.polyA_sites.bedgraph");
 #print "consolidating Illumina polyA site bedgraph\n";
 system("cat $SMRT_file.*.SMRT_ends.bed > $SMRT_file.SMRT_ends.bed");
 #print "consolidating Iso-Seq ends bed\n";
@@ -641,15 +642,15 @@ system("cat $SMRT_file.*.read_ends.bedgraph > $SMRT_file.read_ends.bedgraph");
 system("cat $SMRT_file.*.validated_ends.bed > $SMRT_file.validated_ends.bed");
 #print "consolidating validated ends\n";
 
-#system("rm $ill_file.*.polyA_sites.bed");
+system("rm $ill_file.*.polyA_sites.bed");
 #print "removing Illumina polyA site bed files\n";
 #system("rm $ill_file.*.polyA_sites.bedgraph");
 #print "removing Illumina polyA sites bedgraphs\n";
-#system("rm $SMRT_file.*.SMRT_ends.bed");
+system("rm $SMRT_file.*.SMRT_ends.bed");
 #print "removing Iso-Seq ends bed file\n";
-#system("rm $SMRT_file.*.read_ends.bedgraph");
+system("rm $SMRT_file.*.read_ends.bedgraph");
 #print "removing Iso_seq ends bedgraph files\n";
-#system("rm $SMRT_file.*.validated_ends.bed");
+system("rm $SMRT_file.*.validated_ends.bed");
 #print "removing validated ends files\n";
 
 my $sum_total_found = 0;
