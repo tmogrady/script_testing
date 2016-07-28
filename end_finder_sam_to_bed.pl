@@ -677,7 +677,7 @@ foreach my $ann_SMRT (@ann_ends_found) {
 
 open(OUT, ">validated_ends.txt");
 
-print OUT "$sum_total_found 3' ends\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann starts in annotation file\n\t$sum_ann_found detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
+print OUT "$sum_total_found 3' ends\n\t$sum_novel_found novel\n\t$sum_SMRT_ann annotated\n$sum_total_ann ends in annotation file\n\t$sum_ann_found detected by Iso-Seq\n\ninput files:\n\t$SMRT_file\n\t$ill_file\n\t$ann_file\n";
 
 close(OUT);
 
