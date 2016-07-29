@@ -261,7 +261,7 @@ foreach my $chrom (sort keys %chroms) {
     print "Processing $chrom:\n";
 
     #####----------SMRT FILE PROCESSING-------------######
-    system("awk '\$3==\"$chrom\"' \Q$SMRT_file\E \| sort -k 4,4n > \Q$SMRT_file\E.sorted.temp");
+    system("awk '\$3==\"\Q$chrom\E\"' \Q$SMRT_file\E \| sort -k 4,4n > \Q$SMRT_file\E.sorted.temp");
     system("awk '\$2==0' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.plus.sam.temp");
     system("awk '\$2==16' \Q$SMRT_file\E.sorted.temp > \Q$SMRT_file\E.sorted.minus.sam.temp");
     system("rm \Q$SMRT_file\E.sorted.temp");
@@ -370,7 +370,7 @@ foreach my $chrom (sort keys %chroms) {
     close(INF);
     close(OUT);
 
-    system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.ends.temp.bed > \Q$SMRT_file\E.$chrom.SMRT_ends.bed");
+    system("sort -k 1,1 -k 2,2n \Q$SMRT_file\E.ends.temp.bed > \Q$SMRT_file\E.\Q$chrom\E.SMRT_ends.bed");
     system("rm \Q$SMRT_file.ends.temp.bed\E");
 
     #add header to bed file
@@ -389,7 +389,7 @@ foreach my $chrom (sort keys %chroms) {
     #####----------ILLUMINA FILE PROCESSING-------------######
 
     #make a bed file from the Illumina bedgraph file:
-    system("awk '\$1==\"$chrom\"' \Q$ill_file\E.polyA_sites.bedgraph > \Q$ill_file\E.$chrom.polyA_sites.bedgraph.temp");
+    system("awk '\$1==\"\Q$chrom\E\"' \Q$ill_file\E.polyA_sites.bedgraph > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bedgraph.temp");
     open(INF, "<$ill_file.$chrom.polyA_sites.bedgraph.temp") or die "couldn't open file";
     open(OUT, ">$ill_file.$chrom.polyA_sites.temp.bed") or die "couldn't open file";
 
@@ -401,7 +401,7 @@ foreach my $chrom (sort keys %chroms) {
 
     system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed");
     system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed");
-    system("rm $ill_file.$chrom.polyA_sites.bedgraph.temp");
+    system("rm $ill_file.\Q$chrom\E.polyA_sites.bedgraph.temp");
 
     #add header to bed file
 #    open(INF, "<$ill_file.$chrom.polyA_sites.bed.noheader") or die "couldn't open file";
