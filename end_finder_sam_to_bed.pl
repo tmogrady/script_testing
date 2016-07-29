@@ -401,7 +401,7 @@ foreach my $chrom (sort keys %chroms) {
 
     system("sort -k 1,1 -k 2,2n \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed > \Q$ill_file\E.\Q$chrom\E.polyA_sites.bed");
     system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.temp.bed");
-    system("rm $ill_file.\Q$chrom\E.polyA_sites.bedgraph.temp");
+    system("rm \Q$ill_file\E.\Q$chrom\E.polyA_sites.bedgraph.temp");
 
     #add header to bed file
 #    open(INF, "<$ill_file.$chrom.polyA_sites.bed.noheader") or die "couldn't open file";
@@ -631,26 +631,26 @@ foreach my $chrom (sort keys %chroms) {
     print "================================================\n";
 }
 
-system("cat $ill_file.*.polyA_sites.bed > $ill_file.polyA_sites.bed");
+system("cat \Q$ill_file\E.*.polyA_sites.bed > \Q$ill_file\E.polyA_sites.bed");
 #print "consolidating Illumina polyA site bed\n";
-#system("cat $ill_file.*.polyA_sites.bedgraph > $ill_file.polyA_sites.bedgraph");
+#system("cat \Q$ill_file\E.*.polyA_sites.bedgraph > \Q$ill_file\E.polyA_sites.bedgraph");
 #print "consolidating Illumina polyA site bedgraph\n";
-system("cat $SMRT_file.*.SMRT_ends.bed > $SMRT_file.SMRT_ends.bed");
+system("cat \Q$SMRT_file\E.*.SMRT_ends.bed > \Q$SMRT_file\E.SMRT_ends.bed");
 #print "consolidating Iso-Seq ends bed\n";
-system("cat $SMRT_file.*.read_ends.bedgraph > $SMRT_file.read_ends.bedgraph");
+system("cat \Q$SMRT_file\E.*.read_ends.bedgraph > \Q$SMRT_file\E.read_ends.bedgraph");
 #print "consolidating Iso-Seq ends bedgraph\n";
-system("cat $SMRT_file.*.validated_ends.bed > $SMRT_file.validated_ends.bed");
+system("cat \Q$SMRT_file\E.*.validated_ends.bed > \Q$SMRT_file\E.validated_ends.bed");
 #print "consolidating validated ends\n";
 
-system("rm $ill_file.*.polyA_sites.bed");
+system("rm \Q$ill_file\E.*.polyA_sites.bed");
 #print "removing Illumina polyA site bed files\n";
-#system("rm $ill_file.*.polyA_sites.bedgraph");
+#system("rm \Q$ill_file\E.*.polyA_sites.bedgraph");
 #print "removing Illumina polyA sites bedgraphs\n";
-system("rm $SMRT_file.*.SMRT_ends.bed");
+system("rm \Q$SMRT_file\E.*.SMRT_ends.bed");
 #print "removing Iso-Seq ends bed file\n";
-system("rm $SMRT_file.*.read_ends.bedgraph");
+system("rm \Q$SMRT_file\E.*.read_ends.bedgraph");
 #print "removing Iso_seq ends bedgraph files\n";
-system("rm $SMRT_file.*.validated_ends.bed");
+system("rm \Q$SMRT_file\E.*.validated_ends.bed");
 #print "removing validated ends files\n";
 
 my $sum_total_found = 0;
