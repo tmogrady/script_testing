@@ -428,12 +428,12 @@ foreach my $chrom (sort keys %chroms) {
     
 }
 
-system("cat *.chr*.starts.bed > $SMRT_file.starts.bed");
-system("cat *.chr*.all_read_starts.bedgraph > $SMRT_file.read_starts.bedgraph");
-system("cat *.chr*.validated_starts.bed > $SMRT_file.validated_starts.bed");
-system("rm $SMRT_file.chr*.starts.bed");
-system("rm $SMRT_file.chr*.all_read_starts.bedgraph");
-system("rm $SMRT_file.chr*.validated_starts.bed");
+system("cat $SMRT_file.*.starts.bed > ${SMRT_file}_starts.bed");
+system("cat $SMRT_file.*.all_read_starts.bedgraph > ${SMRT_file}_read_starts.bedgraph");
+system("cat $SMRT_file.*.validated_starts.bed > ${SMRT_file}_validated_starts.bed");
+system("rm $SMRT_file.*.starts.bed");
+system("rm $SMRT_file.*.all_read_starts.bedgraph");
+system("rm $SMRT_file.*.validated_starts.bed");
 
 my $sum_total_found = 0;
 my $sum_novel_found = 0;
