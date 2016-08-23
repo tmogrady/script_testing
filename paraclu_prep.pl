@@ -35,8 +35,8 @@ foreach my $file(@ARGV) {
 	while (my $line = <INF>) {
 		chomp($line);
         next if ($line =~ m/^@/); #skips header lines. Not actually necessary because of sorting above.
-        next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
         my @cols = split("\t", $line);
+        next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
 			
         if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
             $count++; #increases the count by 1
