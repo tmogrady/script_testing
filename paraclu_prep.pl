@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#Takes a SAM file of deepCAGE (or other Illumina) data and counts reads with 5' ends at each genomic position to prepare an input file for Paraclu
+#Takes a SAM file of deepCAGE (or other high-throughput) data and counts reads with 5' ends at each genomic position to prepare an input file for Paraclu
 #Strand assignment for paired-end sequencing assumes TruSeq stranded prep. Reports the 5' end of each READ, not each fragment. Includes only reads flagged as primary alignments.
 
 #USAGE:
@@ -34,7 +34,8 @@ foreach my $file(@ARGV) {
 	
 	while (my $line = <INF>) {
 		chomp($line);
-        next if ($line =~ m/^@/); #skips header lines
+        next if ($line =~ m/^@/); #skips header lines. Not actually necessary because of sorting above.
+        next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
         my @cols = split("\t", $line);
 			
         if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
@@ -77,6 +78,7 @@ foreach my $file(@ARGV) {
 	while (my $line = <INF>) {
 		chomp($line);
         my @cols = split("\t", $line);
+        next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
 		
         while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
             push (@dist, $1);
