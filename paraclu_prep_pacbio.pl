@@ -90,6 +90,8 @@ foreach my $file(@ARGV) {
 			
         $sum = 0;
         @dist = ();
+        
+        my @split_id = split("\/", $cols[0]); #extracts the read depth for this putative isoform from its id
 			
         if (exists $minus_starts{$chr_start_coord}) { #if the key is already in the hash, increases the value (count) by the read depth for that putative isoform
             $minus_starts{$chr_start_coord} = $minus_starts{$chr_start_coord} + $split_id[1];
