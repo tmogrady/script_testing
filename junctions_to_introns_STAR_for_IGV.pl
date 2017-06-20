@@ -15,7 +15,7 @@ use strict;
 			
 			my $chrStart = $cols[1]-1; #fixes the start coordinate, which is off by 1
             
-            print OUT "$cols[0]\t$chrStart\t$cols[2]\t$cols[4]\t$cols[6]\t$cols[3]\n";
+            print OUT "$cols[0]\t$chrStart\t$cols[2]\t$cols[4]_$cols[6]_$cols[7]\t$cols[6]\t$cols[3]\n";
 
 		}
 		
