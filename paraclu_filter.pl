@@ -51,7 +51,7 @@ foreach my $file(@ARGV) {
             if ($dens >= $min_dens) {
                 next if (($cols[0] eq $prev_chr) and ($cols[2] >= $prev_start) and ($cols[2] <= $prev_end)); #removes subclusters
                 $chrStart = $cols[2] - 1; #converts from 1-based (from SAM) to 0-based (for BED)
-                $chrEnd = $cols[3]; #chrEnd stays 1-based (bed is 0-based half-open)
+                $chrEnd = $cols[3]; #chrEnd stays 1-based (BED is 0-based half-open)
                 if ($dens < 100) { #makes the ouput more readable
                     printf OUT "%s\t%d\t%d\t%d%s%.1f\t%d\t%s\n", $cols[0], $chrStart, $chrEnd, $cols[5], ":", $dens, $cols[5], $cols[1];   #limits the density output to 1 decimal place, but doesn't change huge numbers to exponents
                 }
