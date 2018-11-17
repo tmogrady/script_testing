@@ -36,7 +36,7 @@ foreach my $file(@ARGV) {
 		chomp($line);
         next if ($line =~ m/^@/); #skips header lines. Not actually necessary because of sorting above.
         my @cols = split("\t", $line);
-        next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
+        #next if ($cols[5] =~ m/^\d+S/); #skips reads clipped at the 5' end
 			
         if (($cols[2] eq $previous_chr) and ($cols[3] == $previous_coordinate)) {
             $count++; #increases the count by 1
@@ -78,7 +78,7 @@ foreach my $file(@ARGV) {
 	while (my $line = <INF>) {
 		chomp($line);
         my @cols = split("\t", $line);
-        next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
+        #next if ($cols[5] =~ m/\d+S$/); #skips reads soft-clipped at the 5' end
 		
         while ($cols[5] =~ /(\d+)[DMNX=]/g) { #these lines use the CIGAR string to determine the downstream coordinate
             push (@dist, $1);
